@@ -1,0 +1,6 @@
+/target
+node_modules
+.server_vars
+/data
+*.sqlite
+*.csv
