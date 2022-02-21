@@ -58,6 +58,6 @@ fn fetch_nyt_clues(connection: &sqlite::Connection) {
 fn main() {
     let connection = get_connection();
     ensure_table_exists(&connection);
-    // fetch_guardian_clues(&connection);
-    fetch_nyt_clues(&connection);
+    fetch_guardian_clues(&connection);
+    // fetch_nyt_clues(&connection);
 }

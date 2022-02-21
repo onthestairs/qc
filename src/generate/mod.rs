@@ -157,7 +157,7 @@ pub fn has_no_duplicates_2(g1: &Grid, g2: &Grid) -> bool {
     return words.len() == words_set.len();
 }
 
-fn get_words_in_row_after(grid: &Grid, after: usize) -> Vec<Word> {
+pub fn get_words_in_row_after(grid: &Grid, after: usize) -> Vec<Word> {
     let mut words = vec![];
     let mut i = 0;
     for row in grid {
