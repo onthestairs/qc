@@ -7,7 +7,8 @@ fn should_include(surface: &String, solution: &String, length: usize) -> bool {
     if solution.len() != length {
         return false;
     }
-    if solution.contains(" ") {
+    let is_all_alpha_uppercase = solution.chars().all(|c| char::is_ascii_uppercase(&c));
+    if !is_all_alpha_uppercase {
         return false;
     }
     return true;
