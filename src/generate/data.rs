@@ -23,7 +23,7 @@ fn should_include(surface: &String, solution: &String, length: usize) -> bool {
 
 /// find all surfaces with many solutions of length `length`
 pub fn get_multi_surfaces(
-    clues: Vec<(String, String)>,
+    clues: &Vec<(String, String)>,
     length: usize,
 ) -> HashMap<String, HashSet<String>> {
     // make a map from surface to a set of solutions
@@ -32,8 +32,10 @@ pub fn get_multi_surfaces(
         if !should_include(&surface, &solution, length) {
             continue;
         }
-        let solutions = surface_solutions.entry(surface).or_insert(HashSet::new());
-        (*solutions).insert(solution);
+        let solutions = surface_solutions
+            .entry(surface.clone())
+            .or_insert(HashSet::new());
+        (*solutions).insert(solution.clone());
     }
     // filter by only those surfaces with many solutions
     return surface_solutions
@@ -114,11 +116,23 @@ pub fn make_pairs_to_surface(
     return lookup;
 }
 
-/// Make a set of all known words
+/// Make a set of all known words that are the solution to a multi surface
 pub fn make_word_list(ms_pairs: &Vec<(String, Word, Word)>) -> HashSet<Word> {
     let mut words = HashSet::new();
     for (_, w, _) in ms_pairs {
         words.insert(w.clone());
+    }
+    return words;
+}
+
+/// Make a set of all known words of a given size
+pub fn make_word_list_all(size: usize, clues: &Vec<(String, String)>) -> HashSet<Word> {
+    let mut words = HashSet::new();
+    for (_, solution) in clues {
+        let word: Word = solution.chars().collect();
+        if word.len() == size {
+            words.insert(word);
+        }
     }
     return words;
 }

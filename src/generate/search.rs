@@ -7,7 +7,7 @@ use super::data::get_multi_surfaces;
 use super::data::make_ms_pairs;
 use super::data::make_pair_prefix_lookup;
 use super::data::make_pairs_to_surface;
-use super::data::make_word_list;
+use super::data::make_word_list_all;
 use super::grid::get_words_in_row_after;
 use super::grid::init_grid;
 use super::grid::make_empty_grid;
@@ -82,13 +82,19 @@ pub fn print_solution(solution: &QuinianCrossword) {
         println!("{row1} | {row2}")
     }
 }
+enum PairStatus {
+    HasSurface(String),
+    Words,
+    NotWords,
+}
 
 fn find_grids(
     size: usize,
+    allowed_missing_surfaces: usize,
     pairs: Vec<(String, Word, Word)>,
     prefix_lookup: PairPrefixLookup,
     pairs_to_surface: HashMap<(Word, Word), String>,
-    _word_list: HashSet<Word>,
+    word_list: HashSet<Word>,
 ) -> HashSet<QuinianCrossword> {
     let mut g1 = make_empty_grid(size);
     let mut g2 = make_empty_grid(size);
@@ -123,22 +129,38 @@ fn find_grids(
             let final_words_2 = get_words_in_row_after(&g2, 1);
             let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
 
-            // if final_pairs.all(|(w1, w2)| word_list.contains(&w1) && word_list.contains(&w2)) {
-            let final_maybe_surfaces: Vec<Option<String>> = final_across_pairs
-                .map(|(w1, w2)| pairs_to_surface.get(&(w1, w2)).map(|s| s.clone()))
+            let final_word_statuses: Vec<PairStatus> = final_across_pairs
+                .map(
+                    |(w1, w2)| match pairs_to_surface.get(&(w1.clone(), w2.clone())) {
+                        Some(surface) => PairStatus::HasSurface(surface.clone()),
+                        None => {
+                            if word_list.contains(&w1) && word_list.contains(&w2) {
+                                PairStatus::Words
+                            } else {
+                                PairStatus::NotWords
+                            }
+                        }
+                    },
+                )
                 .collect();
-            // dbg!(&final_maybe_surfaces);
-            let final_surfaces: Vec<String> = Itertools::flatten(final_maybe_surfaces.iter())
-                .cloned()
-                .collect();
+            let mut illegal_count = 0;
+            let mut no_surface_count = 0;
+            for final_word_status in &final_word_statuses {
+                match final_word_status {
+                    PairStatus::HasSurface(_) => {}
+                    PairStatus::Words => no_surface_count += 1,
+                    PairStatus::NotWords => illegal_count += 1,
+                }
+            }
 
-            if final_maybe_surfaces.len() == final_surfaces.len() {
-                // dbg!(&final_surfaces);
-                // let maybe_final_surface = pairs_to_surface.get(&(lw1, lw2));
-                // if let Some(final_surface) = maybe_final_surface {
+            if illegal_count == 0 && no_surface_count <= allowed_missing_surfaces {
                 let mut across_surfaces = vec![across_surface_1.clone(), across_surface_2.clone()];
-                for final_surface in final_surfaces {
-                    across_surfaces.push(final_surface.clone());
+                for final_word_status in final_word_statuses {
+                    match final_word_status {
+                        PairStatus::HasSurface(surface) => across_surfaces.push(surface),
+                        PairStatus::Words => across_surfaces.push("[To write...]".to_string()),
+                        PairStatus::NotWords => todo!(),
+                    }
                 }
                 let down_surfaces = down_combo.iter().map(|(s, _, _)| s).cloned().collect();
                 let solution = QuinianCrossword {
@@ -162,13 +184,18 @@ fn find_grids(
 }
 
 /// Find all quinian grids for the given clues
-pub fn find_solutions(size: usize, clues: Vec<(String, String)>) -> HashSet<QuinianCrossword> {
+pub fn find_solutions(
+    size: usize,
+    allowed_missing_surfaces: usize,
+    clues: Vec<(String, String)>,
+) -> HashSet<QuinianCrossword> {
     // prepare the pre_computed data structures
-    let multi_surfaces = get_multi_surfaces(clues, size);
+    let multi_surfaces = get_multi_surfaces(&clues, size);
     println!("Found {} multi-surfaces", multi_surfaces.len());
     let ms_pairs = make_ms_pairs(&multi_surfaces);
     let pairs_to_surface = make_pairs_to_surface(&ms_pairs);
-    let word_list = make_word_list(&ms_pairs);
+    // let word_list = make_word_list(&ms_pairs);
+    let word_list = make_word_list_all(size, &clues);
     println!("Found {} words", word_list.len());
     println!("Found {} pairs", ms_pairs.len());
     let pair_prefix_lookup = make_pair_prefix_lookup(&ms_pairs);
@@ -176,6 +203,7 @@ pub fn find_solutions(size: usize, clues: Vec<(String, String)>) -> HashSet<Quin
     // find any good grids
     let solutions = find_grids(
         size,
+        allowed_missing_surfaces,
         ms_pairs,
         pair_prefix_lookup,
         pairs_to_surface,
