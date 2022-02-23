@@ -1,3 +1,4 @@
+use csv::Writer;
 use std::fs::File;
 
 pub fn get_clues() -> Option<Vec<(String, String)>> {
@@ -11,4 +12,15 @@ pub fn get_clues() -> Option<Vec<(String, String)>> {
         clues.push(clue)
     }
     return Some(clues);
+}
+
+pub fn write_clues(clues: Vec<(String, String)>) -> Option<()> {
+    let file_path = "./clues.csv";
+    let mut writer = Writer::from_path(file_path).ok()?;
+    writer.write_record(&["surface", "solution"]).ok()?;
+    for (surface, solution) in clues {
+        writer.write_record(&[surface, solution]).ok()?;
+    }
+    writer.flush().ok()?;
+    Some(())
 }

@@ -64,9 +64,9 @@ fn find_possible_downs(
         })
         // .cloned()
         .collect();
-    if ds.iter().any(|d| d.len() == 0) {
-        return vec![];
-    }
+    // if ds.iter().any(|d| d.len() == 0) {
+    //     return vec![];
+    // }
     return ds.into_iter().multi_cartesian_product().clone().collect();
 }
 
@@ -99,6 +99,7 @@ fn find_grids(
     let mut solutions = vec![];
     let number_of_combos = (pairs.len() * (pairs.len() - 1)) / 2;
     println!("Found {} combos", number_of_combos);
+    let mut non_zero_carteseans = 0;
     let mut i = 0;
     for pair in pairs.iter().combinations(2) {
         let (surface1, w11, w12) = pair[0];
@@ -108,6 +109,9 @@ fn find_grids(
         init_grid(&mut g1, w11, w21);
         init_grid(&mut g2, w21, w22);
         let down_combos = find_possible_downs(&prefix_lookup, &g1, &g2);
+        if down_combos.len() > 0 {
+            non_zero_carteseans += 1;
+        }
         for down_combo in down_combos {
             place_down_clues(&mut g1, &mut g2, down_combo);
             if !has_no_duplicates_2(&g1, &g2) {
@@ -116,6 +120,7 @@ fn find_grids(
             let mut final_words = get_words_in_row_after(&g1, 2);
             let fws2 = get_words_in_row_after(&g2, 2);
             final_words.extend(fws2);
+            dbg!(&final_words);
 
             // if word_list.contains(&lw1) && word_list.contains(&lw2) {
             if final_words.iter().all(|word| word_list.contains(word)) {
@@ -132,7 +137,7 @@ fn find_grids(
             }
         }
         if i % 10000 == 0 {
-            println!("Done {i}");
+            println!("Done {i}, NZCs: {non_zero_carteseans}");
         }
         i += 1;
     }
@@ -158,12 +163,13 @@ fn make_word_list(ms_pairs: &Vec<(String, Word, Word)>) -> HashSet<Word> {
 
 fn main() {
     let clues = get_clues().unwrap();
-    let size = 3;
+    let size = 4;
     let multi_surfaces = get_multi_surfaces(clues, size);
     println!("Found {} multi-surfaces", multi_surfaces.len());
     let ms_pairs = make_ms_pairs(&multi_surfaces);
     let pairs_to_surface = make_pairs_to_surface(&ms_pairs);
     let word_list = make_word_list(&ms_pairs);
+    println!("Found {} words", word_list.len());
     println!("Found {} pairs", ms_pairs.len());
     let double_prefix_lookup = make_double_prefix_lookup(&ms_pairs);
     println!("made double prefix lookup");

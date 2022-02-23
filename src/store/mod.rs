@@ -1,4 +1,4 @@
-use sqlite::Value;
+use sqlite::{State, Value};
 pub mod csv;
 pub fn get_connection() -> sqlite::Connection {
     let connection = sqlite::open("./clues.sqlite").unwrap();
@@ -25,4 +25,20 @@ pub fn insert_into_table<'a>(
     statement.bind(3, &Value::String(solution.to_string()));
     statement.next().ok()?;
     return Some(());
+}
+
+pub fn select_all_clues(connection: &sqlite::Connection) -> Option<Vec<(String, String)>> {
+    let mut clues = vec![];
+
+    let mut statement = connection
+        .prepare("SELECT surface, solution FROM clues")
+        .unwrap();
+
+    while let State::Row = statement.next().unwrap() {
+        let surface = statement.read::<String>(0).ok()?;
+        let solution = statement.read::<String>(1).ok()?;
+        let clue = (surface, solution);
+        clues.push(clue);
+    }
+    return Some(clues);
 }
