@@ -1,9 +1,7 @@
 //! Guardian crosswords
 
 use regex::Regex;
-use schemars::JsonSchema;
 use scraper::{Html, Selector};
-use serde::{Deserialize, Serialize};
 
 fn make_url<'a>(id: &'a str) -> String {
     return format!("https://www.theguardian.com/crosswords/quick/{}", id);

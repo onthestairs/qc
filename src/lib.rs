@@ -5,5 +5,4 @@
 
 pub mod crosswords;
 pub mod generate;
-pub mod munge;
 pub mod store;
