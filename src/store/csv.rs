@@ -1,6 +1,9 @@
+//! CVS reading/writing
+
 use csv::Writer;
 use std::fs::File;
 
+/// Get all the clues from a csv
 pub fn get_clues() -> Option<Vec<(String, String)>> {
     let file_path = "./clues.csv";
     let file = File::open(file_path).ok()?;
@@ -14,6 +17,7 @@ pub fn get_clues() -> Option<Vec<(String, String)>> {
     return Some(clues);
 }
 
+/// Save all the clues in a CSV
 pub fn write_clues(clues: Vec<(String, String)>) -> Option<()> {
     let file_path = "./clues.csv";
     let mut writer = Writer::from_path(file_path).ok()?;

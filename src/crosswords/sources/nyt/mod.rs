@@ -1,3 +1,5 @@
+//! NYT crosswords
+
 use itertools::Itertools;
 use scraper::{Html, Selector};
 
@@ -40,7 +42,7 @@ fn extract_clues<'a>(document: &'a Html, direction: Direction) -> Option<Vec<(St
     let clue_elements = document.select(&clues_selector);
     let clues = clue_elements
         .tuples()
-        .map(|(number_element, clue_element)| {
+        .map(|(_number_element, clue_element)| {
             let clue_element_texts: Vec<&'a str> = clue_element.text().collect::<Vec<_>>();
             let surface = clue_element_texts
                 .iter()

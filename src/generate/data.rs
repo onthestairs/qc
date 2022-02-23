@@ -1,3 +1,5 @@
+//! Munge relevant data
+
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 

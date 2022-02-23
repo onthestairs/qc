@@ -1,16 +1,17 @@
+//! Generate all words
+
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 
-use crate::generate::data::get_multi_surfaces;
-use crate::generate::data::make_ms_pairs;
-use crate::generate::data::make_pair_prefix_lookup;
-use crate::generate::data::make_pairs_to_surface;
-use crate::generate::data::make_word_list;
-use crate::generate::grid::get_words_in_row_after;
-use crate::generate::grid::init_grid;
-use crate::generate::grid::make_empty_grid;
-// use crate::generate::grid::print_grid;
-use crate::generate::grid::reset_grid;
+use super::data::get_multi_surfaces;
+use super::data::make_ms_pairs;
+use super::data::make_pair_prefix_lookup;
+use super::data::make_pairs_to_surface;
+use super::data::make_word_list;
+use super::grid::get_words_in_row_after;
+use super::grid::init_grid;
+use super::grid::make_empty_grid;
+use super::grid::reset_grid;
 
 use super::data::PairPrefixLookup;
 use super::data::Word;
@@ -55,8 +56,9 @@ fn no_duplicates_in_grid(g1: &Grid, g2: &Grid) -> bool {
     return words.len() == words_set.len();
 }
 
+/// A quinian crossword
 #[derive(PartialEq, Eq, Hash)]
-pub struct Solution {
+pub struct QuinianCrossword {
     grid1: Grid,
     grid2: Grid,
     across_surfaces: Vec<String>,
@@ -64,7 +66,7 @@ pub struct Solution {
 }
 
 /// print a solution
-pub fn print_solution(solution: &Solution) {
+pub fn print_solution(solution: &QuinianCrossword) {
     println!("Across");
     for (i, surface) in solution.across_surfaces.iter().enumerate() {
         println!("{i}. {surface}");
@@ -86,11 +88,11 @@ fn find_grids(
     pairs: Vec<(String, Word, Word)>,
     prefix_lookup: PairPrefixLookup,
     pairs_to_surface: HashMap<(Word, Word), String>,
-    word_list: HashSet<Word>,
-) -> HashSet<Solution> {
+    _word_list: HashSet<Word>,
+) -> HashSet<QuinianCrossword> {
     let mut g1 = make_empty_grid(size);
     let mut g2 = make_empty_grid(size);
-    let mut solutions: HashSet<Solution> = HashSet::new();
+    let mut solutions: HashSet<QuinianCrossword> = HashSet::new();
     let number_of_combos = (pairs.len() * (pairs.len() - 1)) / 2;
     println!("Found {} combos", number_of_combos);
     let mut i = 0;
@@ -139,7 +141,7 @@ fn find_grids(
                     across_surfaces.push(final_surface.clone());
                 }
                 let down_surfaces = down_combo.iter().map(|(s, _, _)| s).cloned().collect();
-                let solution = Solution {
+                let solution = QuinianCrossword {
                     grid1: g1.clone(),
                     grid2: g2.clone(),
                     across_surfaces,
@@ -160,7 +162,7 @@ fn find_grids(
 }
 
 /// Find all quinian grids for the given clues
-pub fn find_solutions(size: usize, clues: Vec<(String, String)>) -> HashSet<Solution> {
+pub fn find_solutions(size: usize, clues: Vec<(String, String)>) -> HashSet<QuinianCrossword> {
     // prepare the pre_computed data structures
     let multi_surfaces = get_multi_surfaces(clues, size);
     println!("Found {} multi-surfaces", multi_surfaces.len());

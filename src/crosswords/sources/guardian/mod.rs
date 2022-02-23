@@ -38,6 +38,7 @@ fn strip_enum<'a>(s: &'a str) -> String {
     return re.replace(s, "").to_string();
 }
 
+/// Get the clues for a guardian crossword
 pub fn get_clues<'a>(id: &'a str) -> Option<Vec<(String, String)>> {
     let crossword_json = fetch_crossword_json(id)?;
     return crossword_json

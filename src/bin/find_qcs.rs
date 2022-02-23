@@ -6,6 +6,9 @@ fn main() {
     let solutions = find_solutions(3, clues);
     for solution in solutions {
         print_solution(&solution);
+        println!("~~~~~~~~");
+        println!("");
+        println!("");
     }
     // dbg!(solutions);
 }
