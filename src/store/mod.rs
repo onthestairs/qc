@@ -30,7 +30,12 @@ pub fn insert_into_table<'a>(
     let _ = statement.bind(1, &Value::String(crossword_id.to_string()));
     let _ = statement.bind(2, &Value::String(surface.to_string()));
     let _ = statement.bind(3, &Value::String(solution.to_string()));
-    statement.next().ok()?;
+    let result = statement.next();
+    match result {
+        Err(e) => println!("{e}"),
+        Ok(_r) => (),
+    }
+
     return Some(());
 }
 

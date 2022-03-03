@@ -1,3 +1,5 @@
+use std::fs::File;
+
 use chrono::{Datelike, Duration, Utc};
 use qc::crosswords::sources::guardian;
 use qc::crosswords::sources::nyt;
@@ -55,9 +57,25 @@ fn fetch_nyt_clues(connection: &sqlite::Connection) {
     }
 }
 
+fn import_xds(connection: &sqlite::Connection) {
+    let file_path = "./data/xd/clues.tsv";
+    let file = File::open(file_path).unwrap();
+    let mut rdr = csv::ReaderBuilder::new().delimiter(b'\t').from_reader(file);
+    for result in rdr.records() {
+        let record = result.unwrap();
+        let solution = record[2].to_string();
+        let surface = record[3].to_string();
+        if solution == "" || surface == "" {
+            continue;
+        }
+        insert_into_table(connection, "xd-corpus", surface.as_str(), solution.as_str());
+    }
+}
+
 fn main() {
     let connection = get_connection();
     ensure_table_exists(&connection);
-    fetch_guardian_clues(&connection);
-    fetch_nyt_clues(&connection);
+    // fetch_guardian_clues(&connection);
+    // fetch_nyt_clues(&connection);
+    import_xds(&connection);
 }
