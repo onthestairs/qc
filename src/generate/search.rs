@@ -54,9 +54,10 @@ fn no_duplicates_in_grid(g1: &Grid, g2: &Grid) -> bool {
     let mut words = get_all_words(g1);
     let ws2 = get_all_words(g2);
     words.extend(ws2);
+    let words_len = words.len();
 
-    let words_set: HashSet<Word> = words.iter().cloned().collect();
-    return words.len() == words_set.len();
+    let words_set: HashSet<Word> = words.into_iter().collect();
+    return words_len == words_set.len();
 }
 
 /// Make a hash of a crossword

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::BufRead;
@@ -24,8 +25,8 @@ struct Args {
     allowed_missing_surfaces: usize,
 
     /// Only allow common words
-    #[clap(long)]
-    only_allow_common_words: bool,
+    #[clap(short, long)]
+    used_on_wiki_n_times: Option<u32>,
 
     /// Exclude banned words
     #[clap(long)]
@@ -40,47 +41,48 @@ fn get_all_used_words(solution: &QuinianCrossword) -> HashSet<Word> {
     return words_set;
 }
 
-fn get_common_words() -> HashSet<Word> {
-    let file = File::open("./data/en_words_10_3-4.txt").unwrap();
+fn get_words_wiki_frequencies() -> HashMap<Word, u32> {
+    let file = File::open("./data/en_words_1_3-4.txt").unwrap();
+    let mut rdr = csv::ReaderBuilder::new().delimiter(b' ').from_reader(file);
+    let mut word_freqs: HashMap<Word, u32> = HashMap::new();
+    for result in rdr.records() {
+        let record = result.unwrap();
+        let word_str = record[0].to_string().to_uppercase();
+        let word: Vec<char> = word_str.chars().collect();
+        let frequency = record[2].parse().unwrap();
+        word_freqs.insert(word, frequency);
+    }
+    return word_freqs;
+}
+
+fn get_banned_words() -> HashSet<Word> {
+    let file = File::open("./data/banned_words.txt").unwrap();
     let reader = BufReader::new(file);
     let mut words = HashSet::new();
-
-    // Read the file line by line using the lines() iterator from std::io::BufRead.
     for line in reader.lines() {
         let line = line.unwrap(); // Ignore errors.
-        let first_word = line.split(" ").nth(0).unwrap();
-        let word: Vec<char> = first_word.chars().collect();
+        let word: Vec<char> = line.chars().collect();
         words.insert(word);
     }
     return words;
 }
 
-fn get_banned_words() -> HashSet<Word> {
-    let banned_words = vec!["HELLO"];
-    let mut banned_words_set = HashSet::new();
-    for word_str in banned_words {
-        let word: Vec<char> = word_str.chars().collect();
-        banned_words_set.insert(word.clone());
-    }
-    return banned_words_set;
-}
-
 struct FilterOptions {
-    only_allow_common_words: bool,
+    used_on_wiki_n_times: Option<u32>,
     exclude_banned_words: bool,
 }
 
 fn is_good_solution(
     filter_options: &FilterOptions,
-    common_words: &HashSet<Word>,
+    common_words: &HashMap<Word, u32>,
     banned_words: &HashSet<Word>,
     solution: &QuinianCrossword,
 ) -> bool
 where
 {
     let used_words = get_all_used_words(solution);
-    if filter_options.only_allow_common_words {
-        if !all_words_are_common(&common_words, &used_words) {
+    if let Some(min_freq) = filter_options.used_on_wiki_n_times {
+        if !all_words_are_common(&common_words, min_freq, &used_words) {
             return false;
         }
     }
@@ -98,8 +100,14 @@ fn any_banned_words_used(banned_words: &HashSet<Word>, used_words: &HashSet<Word
     });
 }
 
-fn all_words_are_common(common_words: &HashSet<Word>, used_words: &HashSet<Word>) -> bool {
-    let all_common = used_words.iter().all(|w| common_words.contains(w));
+fn all_words_are_common(
+    common_words: &HashMap<Word, u32>,
+    min_freq: u32,
+    used_words: &HashSet<Word>,
+) -> bool {
+    let all_common = used_words
+        .iter()
+        .all(|w| *common_words.get(w).unwrap_or(&0) >= min_freq);
     return all_common;
 }
 
@@ -108,14 +116,19 @@ fn main() {
 
     let connection = get_connection();
     let solutions = get_results(&connection, args.size, args.allowed_missing_surfaces).unwrap();
-    let common_words = get_common_words();
+    let words_wiki_frequencies = get_words_wiki_frequencies();
     let banned_words = get_banned_words();
     let filter_options = FilterOptions {
-        only_allow_common_words: args.only_allow_common_words,
+        used_on_wiki_n_times: args.used_on_wiki_n_times,
         exclude_banned_words: args.exclude_banned_words,
     };
     for (solution, _score) in solutions {
-        if is_good_solution(&filter_options, &common_words, &banned_words, &solution) {
+        if is_good_solution(
+            &filter_options,
+            &words_wiki_frequencies,
+            &banned_words,
+            &solution,
+        ) {
             print_qc(&solution);
         }
     }
