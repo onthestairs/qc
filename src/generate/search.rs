@@ -4,6 +4,7 @@ use itertools::Itertools;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
+use std::time::Instant;
 
 use super::data::get_multi_surfaces;
 use super::data::make_ms_pairs;
@@ -95,9 +96,11 @@ fn find_grids<F>(
     let number_of_combos = (pairs.len() * (pairs.len() - 1)) / 2;
     println!("Found {} combos", number_of_combos);
     let mut i = 0;
+    let mut batch_start_time = Instant::now();
     // get every combination of 2 pairs, we
     // will place them in the top two rows of each grid
     for pair in pairs.iter().combinations(2) {
+        i += 1;
         if i < start_index {
             continue;
         }
@@ -172,9 +175,10 @@ fn find_grids<F>(
             }
         }
         if i % 10000 == 0 {
-            println!("Done {i}");
+            let duration = batch_start_time.elapsed();
+            println!("Done {i} in {duration:?}");
+            batch_start_time = Instant::now();
         }
-        i += 1;
     }
 }
 
