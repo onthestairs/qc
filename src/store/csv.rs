@@ -13,7 +13,7 @@ pub fn get_clues() -> Option<Vec<(String, Word)>> {
     let mut clues = vec![];
     for result in rdr.records() {
         let record = result.ok()?;
-        let surface = record[0].to_string();
+        let surface = record[0].to_string().trim_end_matches(".").to_string();
         let solution_str = record[1].to_string();
         let solution: Word = solution_str.chars().collect();
         let clue = (surface, solution);
