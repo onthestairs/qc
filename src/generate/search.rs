@@ -188,13 +188,13 @@ pub fn find_solutions<F>(
     size: usize,
     allowed_missing_surfaces: usize,
     start_index: usize,
-    clues: Vec<(String, String)>,
+    clues: Vec<(String, Word)>,
     on_found: F,
 ) where
     F: Fn(&QuinianCrossword, usize, usize) -> (),
 {
     // prepare the pre_computed data structures
-    let multi_surfaces = get_multi_surfaces(&clues, size);
+    let multi_surfaces = get_multi_surfaces(&clues);
     println!("Found {} multi-surfaces", multi_surfaces.len());
     let ms_pairs = make_ms_pairs(&multi_surfaces);
     let pairs_to_surface = make_pairs_to_surface(&ms_pairs);

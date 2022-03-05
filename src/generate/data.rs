@@ -6,32 +6,11 @@ use std::collections::{HashMap, HashSet};
 /// type alias for a word
 pub type Word = Vec<char>;
 
-/// Should we include the surface/solution in the analysis
-fn should_include(surface: &String, solution: &String, length: usize) -> bool {
-    if surface.len() == 0 || surface.starts_with("See") || surface == "<<NO CLUE>>" {
-        return false;
-    }
-    if solution.len() != length {
-        return false;
-    }
-    let is_all_alpha_uppercase = solution.chars().all(|c| char::is_ascii_uppercase(&c));
-    if !is_all_alpha_uppercase {
-        return false;
-    }
-    return true;
-}
-
 /// find all surfaces with many solutions of length `length`
-pub fn get_multi_surfaces(
-    clues: &Vec<(String, String)>,
-    length: usize,
-) -> HashMap<String, HashSet<String>> {
+pub fn get_multi_surfaces(clues: &Vec<(String, Word)>) -> HashMap<String, HashSet<Word>> {
     // make a map from surface to a set of solutions
-    let mut surface_solutions: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut surface_solutions: HashMap<String, HashSet<Word>> = HashMap::new();
     for (surface, solution) in clues {
-        if !should_include(&surface, &solution, length) {
-            continue;
-        }
         let solutions = surface_solutions
             .entry(surface.clone())
             .or_insert(HashSet::new());
@@ -65,15 +44,13 @@ pub fn make_pairs_to_surfaces(
 }
 
 /// make a vec of all solution pairs
-pub fn make_ms_pairs(
-    multi_surfaces: &HashMap<String, HashSet<String>>,
-) -> Vec<(String, Word, Word)> {
+pub fn make_ms_pairs(multi_surfaces: &HashMap<String, HashSet<Word>>) -> Vec<(String, Word, Word)> {
     let mut pairs = vec![];
     for (surface, solutions) in multi_surfaces {
-        let solutions_vec: Vec<&String> = solutions.iter().collect();
+        let solutions_vec: Vec<&Word> = solutions.iter().collect();
         for pair in solutions_vec.iter().combinations(2) {
-            let w1: Word = pair[0].chars().collect();
-            let w2: Word = pair[1].chars().collect();
+            let w1: Word = pair[0].to_vec();
+            let w2: Word = pair[1].to_vec();
             if w1 == w2 {
                 continue;
             }
@@ -124,12 +101,11 @@ pub fn make_word_list(ms_pairs: &Vec<(String, Word, Word)>) -> HashSet<Word> {
 }
 
 /// Make a set of all known words of a given size
-pub fn make_word_list_all(size: usize, clues: &Vec<(String, String)>) -> HashSet<Word> {
+pub fn make_word_list_all(size: usize, clues: &Vec<(String, Word)>) -> HashSet<Word> {
     let mut words = HashSet::new();
     for (_, solution) in clues {
-        let word: Word = solution.chars().collect();
-        if word.len() == size {
-            words.insert(word);
+        if solution.len() == size {
+            words.insert(solution.clone());
         }
     }
     return words;

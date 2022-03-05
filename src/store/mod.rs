@@ -6,6 +6,7 @@ use crate::generate::qc::QuinianCrossword;
 use crate::generate::search::hash_crossword;
 
 pub mod csv;
+pub mod word_frequencies;
 
 /// Get a connection to an sqlite db
 pub fn get_connection() -> sqlite::Connection {

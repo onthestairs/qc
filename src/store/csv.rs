@@ -3,15 +3,20 @@
 use csv::Writer;
 use std::fs::File;
 
+use crate::generate::data::Word;
+
 /// Get all the clues from a csv
-pub fn get_clues() -> Option<Vec<(String, String)>> {
+pub fn get_clues() -> Option<Vec<(String, Word)>> {
     let file_path = "./clues.csv";
     let file = File::open(file_path).ok()?;
     let mut rdr = csv::Reader::from_reader(file);
     let mut clues = vec![];
     for result in rdr.records() {
         let record = result.ok()?;
-        let clue = (record[0].to_string(), record[1].to_string());
+        let surface = record[0].to_string();
+        let solution_str = record[1].to_string();
+        let solution: Word = solution_str.chars().collect();
+        let clue = (surface, solution);
         clues.push(clue)
     }
     return Some(clues);
