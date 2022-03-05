@@ -68,12 +68,12 @@ pub fn get_all_words(g: &Grid) -> Vec<Word> {
 
 /// Get all the across words in the grid after (and not
 /// including) the given row
-pub fn get_words_in_row_after(grid: &Grid, after: usize) -> Vec<Word> {
+pub fn get_words_in_row_after(grid: &Grid, after: usize) -> Vec<&Word> {
     let mut words = vec![];
     let mut i = 0;
     for row in grid {
         if i > after {
-            words.push(row.clone());
+            words.push(row);
         }
         i += 1;
     }

@@ -91,10 +91,8 @@ pub type PairPrefixLookup = HashMap<(Word, Word), Vec<(String, Word, Word)>>;
 
 /// Make a lookup from the 2-prefix or each word in a pair, to the
 /// poissible pairs
-pub fn make_pair_prefix_lookup(
-    pairs: &Vec<(String, Word, Word)>,
-) -> HashMap<(Word, Word), Vec<(String, Word, Word)>> {
-    let mut lookup: HashMap<(Word, Word), Vec<(String, Word, Word)>> = HashMap::new();
+pub fn make_pair_prefix_lookup(pairs: &Vec<(String, Word, Word)>) -> PairPrefixLookup {
+    let mut lookup: PairPrefixLookup = HashMap::new();
     for (s, w1, w2) in pairs {
         let prefix1 = w1.iter().take(2).map(|c| c.clone()).collect();
         let prefix2 = w2.iter().take(2).map(|c| c.clone()).collect();

@@ -23,29 +23,34 @@ use super::grid::place_word_in_col_mut;
 use super::grid::Grid;
 use super::qc::QuinianCrossword;
 
-fn find_possible_downs(
-    lookup: &PairPrefixLookup,
+fn find_possible_downs<'a>(
+    lookup: &'a PairPrefixLookup,
+    // weird hack so that i can use the default in the
+    // map lookup
+    e: &'a Vec<(String, Word, Word)>,
     grid1: &Grid,
     grid2: &Grid,
-) -> Vec<Vec<(String, Word, Word)>> {
+) -> Vec<Vec<&'a (String, Word, Word)>> {
     let size = grid1.len();
     // find the possible pairs in each column
-    let ds: Vec<Vec<(String, Word, Word)>> = (0..size)
+    let ds: Vec<&Vec<(String, Word, Word)>> = (0..size)
         .map(|col| {
             let prefix1 = find_col_prefix(grid1, col, 2);
             let prefix2 = find_col_prefix(grid2, col, 2);
-            return lookup.get(&(prefix1, prefix2)).unwrap_or(&vec![]).clone();
+            let maybe_down_pairs = lookup.get(&(prefix1, prefix2));
+            let down_pairs = maybe_down_pairs.unwrap_or(e);
+            return down_pairs;
         })
         .collect();
     // Get every combo of possible placements in the columns
-    return ds.into_iter().multi_cartesian_product().clone().collect();
+    return ds.into_iter().multi_cartesian_product().collect();
 }
 
-fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<(String, Word, Word)>) {
+fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&(String, Word, Word)>) {
     let mut col = 0;
     for (_, w1, w2) in down_combos {
-        place_word_in_col_mut(g1, col, &w1);
-        place_word_in_col_mut(g2, col, &w2);
+        place_word_in_col_mut(g1, col, w1);
+        place_word_in_col_mut(g2, col, w2);
         col += 1;
     }
 }
@@ -106,7 +111,9 @@ fn find_grids<F>(
         init_grid(&mut g2, w12, w22);
         // find all the ways we can place a pair in all of the
         // columns
-        let down_combos = find_possible_downs(&prefix_lookup, &g1, &g2);
+        // empty_vec is a weird hack. see definition of func
+        let empty_vec = vec![];
+        let down_combos = find_possible_downs(&prefix_lookup, &empty_vec, &g1, &g2);
         for down_combo in down_combos {
             place_down_clues(&mut g1, &mut g2, &down_combo);
 
@@ -125,7 +132,7 @@ fn find_grids<F>(
                     |(w1, w2)| match pairs_to_surface.get(&(w1.clone(), w2.clone())) {
                         Some(surface) => PairStatus::HasSurface(surface.clone()),
                         None => {
-                            if word_list.contains(&w1) && word_list.contains(&w2) {
+                            if word_list.contains(w1) && word_list.contains(w2) {
                                 PairStatus::Words
                             } else {
                                 PairStatus::NotWords
@@ -190,7 +197,8 @@ pub fn find_solutions<F>(
     let word_list = make_word_list_all(size, &clues);
     println!("Found {} words", word_list.len());
     println!("Found {} pairs", ms_pairs.len());
-    let pair_prefix_lookup = make_pair_prefix_lookup(&ms_pairs);
+    let ms_pairs_cloned = ms_pairs.clone();
+    let pair_prefix_lookup = make_pair_prefix_lookup(&ms_pairs_cloned);
     println!("made double prefix lookup");
     // find any good grids
     find_grids(
