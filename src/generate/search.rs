@@ -1,7 +1,9 @@
 //! Generate all words
 
 use itertools::Itertools;
+use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 
 use super::data::get_multi_surfaces;
 use super::data::make_ms_pairs;
@@ -19,6 +21,7 @@ use super::grid::find_col_prefix;
 use super::grid::get_all_words;
 use super::grid::place_word_in_col_mut;
 use super::grid::Grid;
+use super::qc::QuinianCrossword;
 
 fn find_possible_downs(
     lookup: &PairPrefixLookup,
@@ -56,55 +59,42 @@ fn no_duplicates_in_grid(g1: &Grid, g2: &Grid) -> bool {
     return words.len() == words_set.len();
 }
 
-/// A quinian crossword
-#[derive(PartialEq, Eq, Hash)]
-pub struct QuinianCrossword {
-    grid1: Grid,
-    grid2: Grid,
-    across_surfaces: Vec<String>,
-    down_surfaces: Vec<String>,
+/// Make a hash of a crossword
+pub fn hash_crossword(crossword: &QuinianCrossword) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    crossword.hash(&mut hasher);
+    return hasher.finish();
 }
 
-/// print a solution
-pub fn print_solution(solution: &QuinianCrossword) {
-    println!("Across");
-    for (i, surface) in solution.across_surfaces.iter().enumerate() {
-        println!("{i}. {surface}");
-    }
-    println!("Down");
-    for (i, surface) in solution.down_surfaces.iter().enumerate() {
-        println!("{i}. {surface}");
-    }
-
-    for i in 0..solution.grid1.len() {
-        let row1: String = solution.grid1[i].iter().collect();
-        let row2: String = solution.grid2[i].iter().collect();
-        println!("{row1} | {row2}")
-    }
-}
 enum PairStatus {
     HasSurface(String),
     Words,
     NotWords,
 }
 
-fn find_grids(
+fn find_grids<F>(
+    start_index: usize,
     size: usize,
     allowed_missing_surfaces: usize,
     pairs: Vec<(String, Word, Word)>,
     prefix_lookup: PairPrefixLookup,
     pairs_to_surface: HashMap<(Word, Word), String>,
     word_list: HashSet<Word>,
-) -> HashSet<QuinianCrossword> {
+    on_found: F,
+) where
+    F: Fn(&QuinianCrossword, usize, usize) -> (),
+{
     let mut g1 = make_empty_grid(size);
     let mut g2 = make_empty_grid(size);
-    let mut solutions: HashSet<QuinianCrossword> = HashSet::new();
     let number_of_combos = (pairs.len() * (pairs.len() - 1)) / 2;
     println!("Found {} combos", number_of_combos);
     let mut i = 0;
     // get every combination of 2 pairs, we
     // will place them in the top two rows of each grid
     for pair in pairs.iter().combinations(2) {
+        if i < start_index {
+            continue;
+        }
         let (across_surface_1, w11, w12) = pair[0];
         let (across_surface_2, w21, w22) = pair[1];
         // reset both the grids
@@ -152,6 +142,7 @@ fn find_grids(
                     PairStatus::NotWords => illegal_count += 1,
                 }
             }
+            let score = no_surface_count;
 
             if illegal_count == 0 && no_surface_count <= allowed_missing_surfaces {
                 let mut across_surfaces = vec![across_surface_1.clone(), across_surface_2.clone()];
@@ -169,10 +160,7 @@ fn find_grids(
                     across_surfaces,
                     down_surfaces,
                 };
-                print_solution(&solution);
-                println!("====================");
-                println!("====================");
-                solutions.insert(solution);
+                on_found(&solution, size, score);
             }
         }
         if i % 10000 == 0 {
@@ -180,15 +168,18 @@ fn find_grids(
         }
         i += 1;
     }
-    return solutions;
 }
 
 /// Find all quinian grids for the given clues
-pub fn find_solutions(
+pub fn find_solutions<F>(
     size: usize,
     allowed_missing_surfaces: usize,
+    start_index: usize,
     clues: Vec<(String, String)>,
-) -> HashSet<QuinianCrossword> {
+    on_found: F,
+) where
+    F: Fn(&QuinianCrossword, usize, usize) -> (),
+{
     // prepare the pre_computed data structures
     let multi_surfaces = get_multi_surfaces(&clues, size);
     println!("Found {} multi-surfaces", multi_surfaces.len());
@@ -201,13 +192,14 @@ pub fn find_solutions(
     let pair_prefix_lookup = make_pair_prefix_lookup(&ms_pairs);
     println!("made double prefix lookup");
     // find any good grids
-    let solutions = find_grids(
+    find_grids(
+        start_index,
         size,
         allowed_missing_surfaces,
         ms_pairs,
         pair_prefix_lookup,
         pairs_to_surface,
         word_list,
+        on_found,
     );
-    return solutions;
 }

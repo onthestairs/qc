@@ -8,7 +8,7 @@ pub type Word = Vec<char>;
 
 /// Should we include the surface/solution in the analysis
 fn should_include(surface: &String, solution: &String, length: usize) -> bool {
-    if surface.len() == 0 || surface.starts_with("See") {
+    if surface.len() == 0 || surface.starts_with("See") || surface == "<<NO CLUE>>" {
         return false;
     }
     if solution.len() != length {
