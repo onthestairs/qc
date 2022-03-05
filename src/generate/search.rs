@@ -176,7 +176,8 @@ fn find_grids<F>(
         }
         if i % 10000 == 0 {
             let duration = batch_start_time.elapsed();
-            println!("Done {i} in {duration:?}");
+            let percent = (i as f32 / number_of_combos as f32) * 100.0;
+            println!("Done {i} ({percent}%) in {duration:?}");
             batch_start_time = Instant::now();
         }
     }
