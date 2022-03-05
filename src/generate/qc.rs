@@ -1,3 +1,5 @@
+//! A quinian crossword
+
 use serde::{Deserialize, Serialize};
 use term_table::row::Row;
 use term_table::table_cell::{Alignment, TableCell};
