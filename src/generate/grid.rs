@@ -54,15 +54,15 @@ pub fn get_all_words(g: &Grid) -> Vec<Word> {
     let size = g.len();
     let mut words: Vec<Word> = (0..size)
         .map(|row| {
-            return get_word_in_row(g, row);
+            return get_word_in_row(g, row).clone();
         })
         .collect();
-    let downs: Vec<Word> = (0..size)
+    let mut downs: Vec<Word> = (0..size)
         .map(|col| {
             return get_word_in_col(g, col);
         })
         .collect();
-    words.extend(downs);
+    words.append(&mut downs);
     return words;
 }
 
@@ -81,8 +81,8 @@ pub fn get_words_in_row_after(grid: &Grid, after: usize) -> Vec<&Word> {
 }
 
 /// Get the word in a give row
-pub fn get_word_in_row(grid: &Grid, row: usize) -> Word {
-    return grid[row].clone();
+pub fn get_word_in_row(grid: &Grid, row: usize) -> &Word {
+    return &grid[row];
 }
 
 /// Get the word in a given column

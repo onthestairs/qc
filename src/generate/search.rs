@@ -56,14 +56,15 @@ fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&(String, Wo
     }
 }
 
-fn no_duplicates_in_grid(g1: &Grid, g2: &Grid) -> bool {
-    let mut words = get_all_words(g1);
-    let ws2 = get_all_words(g2);
-    words.extend(ws2);
-    let words_len = words.len();
-
-    let words_set: HashSet<Word> = words.into_iter().collect();
-    return words_len == words_set.len();
+fn no_duplicates_in_grid(size: usize, g1: &Grid, g2: &Grid) -> bool {
+    let words1 = get_all_words(g1);
+    let words2 = get_all_words(g2);
+    let mut all_words: HashSet<Word> = words1.into_iter().collect();
+    for word in words2 {
+        all_words.insert(word);
+    }
+    let expected_len = (2 * size) * 2;
+    return expected_len == all_words.len();
 }
 
 /// Make a hash of a crossword
@@ -120,29 +121,22 @@ fn find_grids<F>(
         for down_combo in down_combos {
             place_down_clues(&mut g1, &mut g2, &down_combo);
 
-            // ignore any grids with duplicate words
-            if !no_duplicates_in_grid(&g1, &g2) {
-                continue;
-            }
-
             // check if the final across words are proper words
             let final_words_1 = get_words_in_row_after(&g1, 1);
             let final_words_2 = get_words_in_row_after(&g2, 1);
             let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
 
             let final_word_statuses: Vec<PairStatus> = final_across_pairs
-                .map(
-                    |(w1, w2)| match pairs_to_surface.get(&(w1.clone(), w2.clone())) {
-                        Some(surface) => PairStatus::HasSurface(surface.clone()),
-                        None => {
-                            if word_list.contains(w1) && word_list.contains(w2) {
-                                PairStatus::Words
-                            } else {
-                                PairStatus::NotWords
-                            }
+                .map(|(w1, w2)| {
+                    if word_list.contains(w1) && word_list.contains(w2) {
+                        match pairs_to_surface.get(&(w1.clone(), w2.clone())) {
+                            Some(surface) => PairStatus::HasSurface(surface.clone()),
+                            None => PairStatus::Words,
                         }
-                    },
-                )
+                    } else {
+                        PairStatus::NotWords
+                    }
+                })
                 .collect();
             let mut illegal_count = 0;
             let mut no_surface_count = 0;
@@ -155,7 +149,10 @@ fn find_grids<F>(
             }
             let score = no_surface_count;
 
-            if illegal_count == 0 && no_surface_count <= allowed_missing_surfaces {
+            if illegal_count == 0
+                && no_surface_count <= allowed_missing_surfaces
+                && no_duplicates_in_grid(size, &g1, &g2)
+            {
                 let mut across_surfaces = vec![across_surface_1.clone(), across_surface_2.clone()];
                 for final_word_status in final_word_statuses {
                     match final_word_status {
