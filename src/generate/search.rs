@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::time::Instant;
 
-use super::data::get_multi_surfaces;
+use super::data::{get_multi_surfaces, MultiSurface};
 use super::data::make_ms_pairs;
 use super::data::make_pair_prefix_lookup;
 use super::data::make_pairs_to_surface;
@@ -28,13 +28,13 @@ fn find_possible_downs<'a>(
     lookup: &'a PairPrefixLookup,
     // weird hack so that i can use the default in the
     // map lookup
-    e: &'a Vec<(String, Word, Word)>,
+    e: &'a Vec<MultiSurface>,
     grid1: &Grid,
     grid2: &Grid,
-) -> Vec<Vec<&'a (String, Word, Word)>> {
+) -> Vec<Vec<&'a MultiSurface>> {
     let size = grid1.len();
     // find the possible pairs in each column
-    let ds: Vec<&Vec<(String, Word, Word)>> = (0..size)
+    let ds: Vec<&Vec<MultiSurface>> = (0..size)
         .map(|col| {
             let prefix1 = find_col_prefix(grid1, col, 2);
             let prefix2 = find_col_prefix(grid2, col, 2);
@@ -47,7 +47,7 @@ fn find_possible_downs<'a>(
     return ds.into_iter().multi_cartesian_product().collect();
 }
 
-fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&(String, Word, Word)>) {
+fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&MultiSurface>) {
     let mut col = 0;
     for (_, w1, w2) in down_combos {
         place_word_in_col_mut(g1, col, w1);
@@ -84,7 +84,7 @@ fn find_grids<F>(
     start_index: usize,
     size: usize,
     allowed_missing_surfaces: usize,
-    pairs: Vec<(String, Word, Word)>,
+    pairs: Vec<MultiSurface>,
     prefix_lookup: PairPrefixLookup,
     pairs_to_surface: HashMap<(Word, Word), String>,
     word_list: HashSet<Word>,
