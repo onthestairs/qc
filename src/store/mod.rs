@@ -2,7 +2,7 @@
 
 use sqlite::{State, Value};
 
-use crate::generate::qc::QuinianCrossword;
+use crate::generate::qc::{QuinianCrossword, print_qc};
 use crate::generate::search::hash_crossword;
 
 pub mod csv;
@@ -74,6 +74,8 @@ pub fn insert_result_into_table<'a>(
     size: usize,
     score: usize,
 ) -> Option<()> {
+    print_qc(crossword);
+
     let mut statement = connection
         .prepare("INSERT INTO results (crossword, hash, size, score) VALUES (?,?,?,?);")
         .unwrap();

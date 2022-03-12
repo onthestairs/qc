@@ -6,15 +6,18 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::time::Instant;
 
-use super::data::{get_multi_surfaces, MultiSurface};
+use crate::generate::grid::{make_sparse_grid, init_sparse_grid};
+
+use super::data::{get_multi_surfaces, MultiSurface, PairFirstAndThirdLookup};
 use super::data::make_ms_pairs;
 use super::data::make_pair_prefix_lookup;
 use super::data::make_pairs_to_surface;
 use super::data::make_word_list_all;
-use super::grid::get_words_in_row_after;
+use super::grid::{get_words_in_row_after, find_col_mask};
 use super::grid::init_grid;
 use super::grid::make_empty_grid;
 use super::grid::reset_grid;
+use super::grid::reset_sparse_grid;
 
 use super::data::PairPrefixLookup;
 use super::data::Word;
@@ -47,6 +50,42 @@ fn find_possible_downs<'a>(
     return ds.into_iter().multi_cartesian_product().collect();
 }
 
+fn sparse_find_possible_downs<'a>(
+    lookup: &'a PairFirstAndThirdLookup,
+    // weird hack so that i can use the default in the
+    // map lookup
+    e: &'a Vec<MultiSurface>,
+    grid1: &Grid,
+    grid2: &Grid,
+) -> Vec<Vec<&'a MultiSurface>> {
+    // let size = grid1.len();
+    let down_cols = vec![0, 2, 4];
+    // find the possible pairs in each column
+    let ds: Vec<&Vec<MultiSurface>> = down_cols.into_iter()
+        .map(|col| {
+            // let prefix1 = find_col_prefix(grid1, col, 2);
+            // let prefix2 = find_col_prefix(grid2, col, 2);
+            let prefix1 = find_col_mask(grid1, col, vec![0,2]);
+            let prefix2 = find_col_mask(grid2, col, vec![0,2]);
+            let maybe_down_pairs = lookup.get(&(prefix1, prefix2));
+            let down_pairs = maybe_down_pairs.unwrap_or(e);
+            return down_pairs;
+        })
+        .collect();
+    // Get every combo of possible placements in the columns
+    return ds.into_iter().multi_cartesian_product().collect();
+}
+
+// place a single set of down clues into the grid
+fn sparse_place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&MultiSurface>) {
+    let mut col = 0;
+    for (_, w1, w2) in down_combos {
+        place_word_in_col_mut(g1, col, w1);
+        place_word_in_col_mut(g2, col, w2);
+        col += 2;
+    }
+}
+
 fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&MultiSurface>) {
     let mut col = 0;
     for (_, w1, w2) in down_combos {
@@ -57,6 +96,7 @@ fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&MultiSurfac
 }
 
 fn no_duplicates_in_grid(size: usize, g1: &Grid, g2: &Grid) -> bool {
+    return true;
     let words1 = get_all_words(g1);
     let words2 = get_all_words(g2);
     let mut all_words: HashSet<Word> = words1.into_iter().collect();
@@ -85,15 +125,24 @@ fn find_grids<F>(
     size: usize,
     allowed_missing_surfaces: usize,
     pairs: Vec<MultiSurface>,
-    prefix_lookup: PairPrefixLookup,
+    // prefix_lookup: PairPrefixLookup,
+    mask_lookup: PairFirstAndThirdLookup,
     pairs_to_surface: HashMap<(Word, Word), String>,
     word_list: HashSet<Word>,
     on_found: F,
 ) where
     F: Fn(&QuinianCrossword, usize, usize) -> (),
 {
-    let mut g1 = make_empty_grid(size);
-    let mut g2 = make_empty_grid(size);
+    assert!(size == 5);
+    // was changing this code so that it can build my sparse grid. Actually might 
+    // have to change quite a lot of the dependent code like find_possible_downs and 
+    // place_down_clues. Could I 
+    // just make (some of) them generic?
+
+    // let mut g1 = make_empty_grid(size);
+    // let mut g2 = make_empty_grid(size);
+    let mut g1 = make_sparse_grid();
+    let mut g2 = make_sparse_grid();
     let number_of_combos = (pairs.len() * (pairs.len() - 1)) / 2;
     println!("Found {} combos", number_of_combos);
     let mut i = 0;
@@ -108,22 +157,23 @@ fn find_grids<F>(
         let (across_surface_1, w11, w12) = pair[0];
         let (across_surface_2, w21, w22) = pair[1];
         // reset both the grids
-        reset_grid(&mut g1);
-        reset_grid(&mut g2);
+        reset_sparse_grid(&mut g1);
+        reset_sparse_grid(&mut g2);
         // place the words in the top 2 rows
-        init_grid(&mut g1, w11, w21);
-        init_grid(&mut g2, w12, w22);
+        init_sparse_grid(&mut g1, w11, w21);
+        init_sparse_grid(&mut g2, w12, w22);
         // find all the ways we can place a pair in all of the
         // columns
         // empty_vec is a weird hack. see definition of func
         let empty_vec = vec![];
-        let down_combos = find_possible_downs(&prefix_lookup, &empty_vec, &g1, &g2);
+        let down_combos = sparse_find_possible_downs(&mask_lookup, 
+            &empty_vec, &g1, &g2);
         for down_combo in down_combos {
-            place_down_clues(&mut g1, &mut g2, &down_combo);
+            sparse_place_down_clues(&mut g1, &mut g2, &down_combo);
 
             // check if the final across words are proper words
-            let final_words_1 = get_words_in_row_after(&g1, 1);
-            let final_words_2 = get_words_in_row_after(&g2, 1);
+            let final_words_1 = get_words_in_row_after(&g1, 3);
+            let final_words_2 = get_words_in_row_after(&g2, 3);
             let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
 
             let final_word_statuses: Vec<PairStatus> = final_across_pairs
