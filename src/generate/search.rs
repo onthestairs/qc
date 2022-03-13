@@ -6,14 +6,15 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::time::Instant;
 
-use crate::generate::grid::{make_sparse_grid, init_sparse_grid};
+use crate::generate::data::make_first_and_third_prefix_lookup;
+use crate::generate::grid::{make_sparse_grid, init_sparse_grid, sparse_place_word_in_row_mut};
 
 use super::data::{get_multi_surfaces, MultiSurface, PairFirstAndThirdLookup};
 use super::data::make_ms_pairs;
 use super::data::make_pair_prefix_lookup;
 use super::data::make_pairs_to_surface;
 use super::data::make_word_list_all;
-use super::grid::{get_words_in_row_after, find_col_mask};
+use super::grid::{get_words_in_row_after, find_col_mask, find_row_mask, sparse_get_all_words};
 use super::grid::init_grid;
 use super::grid::make_empty_grid;
 use super::grid::reset_grid;
@@ -95,8 +96,18 @@ fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&MultiSurfac
     }
 }
 
+fn sparse_no_duplicates_in_grid(g1: &Grid, g2: &Grid) -> bool {
+    let words1 = sparse_get_all_words(g1);
+    let words2 = sparse_get_all_words(g2);
+    let mut all_words: HashSet<Word> = words1.into_iter().collect();
+    for word in words2 {
+        all_words.insert(word);
+    }
+    let expected_len = 12;
+    return expected_len == all_words.len();
+}
+
 fn no_duplicates_in_grid(size: usize, g1: &Grid, g2: &Grid) -> bool {
-    return true;
     let words1 = get_all_words(g1);
     let words2 = get_all_words(g2);
     let mut all_words: HashSet<Word> = words1.into_iter().collect();
@@ -171,46 +182,46 @@ fn find_grids<F>(
         for down_combo in down_combos {
             sparse_place_down_clues(&mut g1, &mut g2, &down_combo);
 
-            // check if the final across words are proper words
-            let final_words_1 = get_words_in_row_after(&g1, 3);
-            let final_words_2 = get_words_in_row_after(&g2, 3);
-            let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
 
-            let final_word_statuses: Vec<PairStatus> = final_across_pairs
-                .map(|(w1, w2)| {
-                    if word_list.contains(w1) && word_list.contains(w2) {
-                        match pairs_to_surface.get(&(w1.clone(), w2.clone())) {
-                            Some(surface) => PairStatus::HasSurface(surface.clone()),
-                            None => PairStatus::Words,
-                        }
-                    } else {
-                        PairStatus::NotWords
-                    }
-                })
-                .collect();
-            let mut illegal_count = 0;
-            let mut no_surface_count = 0;
-            for final_word_status in &final_word_statuses {
-                match final_word_status {
-                    PairStatus::HasSurface(_) => {}
-                    PairStatus::Words => no_surface_count += 1,
-                    PairStatus::NotWords => illegal_count += 1,
-                }
-            }
-            let score = no_surface_count;
 
-            if illegal_count == 0
-                && no_surface_count <= allowed_missing_surfaces
-                && no_duplicates_in_grid(size, &g1, &g2)
-            {
-                let mut across_surfaces = vec![across_surface_1.clone(), across_surface_2.clone()];
-                for final_word_status in final_word_statuses {
-                    match final_word_status {
-                        PairStatus::HasSurface(surface) => across_surfaces.push(surface),
-                        PairStatus::Words => across_surfaces.push("[To write...]".to_string()),
-                        PairStatus::NotWords => todo!(),
-                    }
-                }
+            // // check if the final across words are proper words
+            // let final_words_1 = get_words_in_row_after(&g1, 3);
+            // let final_words_2 = get_words_in_row_after(&g2, 3);
+            // let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
+
+            // let final_word_statuses: Vec<PairStatus> = final_across_pairs
+            //     .map(|(w1, w2)| {
+            //         if word_list.contains(w1) && word_list.contains(w2) {
+            //             match pairs_to_surface.get(&(w1.clone(), w2.clone())) {
+            //                 Some(surface) => PairStatus::HasSurface(surface.clone()),
+            //                 None => PairStatus::Words,
+            //             }
+            //         } else {
+            //             PairStatus::NotWords
+            //         }
+            //     })
+            //     .collect();
+            // let mut illegal_count = 0;
+            // let mut no_surface_count = 0;
+            // for final_word_status in &final_word_statuses {
+            //     match final_word_status {
+            //         PairStatus::HasSurface(_) => {}
+            //         PairStatus::Words => no_surface_count += 1,
+            //         PairStatus::NotWords => illegal_count += 1,
+            //     }
+            // }
+            let empty_vec = vec![];
+            let final_row_candidates = 
+                find_final_row_candidates(&mask_lookup, &g1, &g2, &empty_vec);
+            for (clue, w1, w2) in final_row_candidates {
+                sparse_place_word_in_row_mut(&mut g1, 4, w1);
+                sparse_place_word_in_row_mut(&mut g2, 4, w2);
+
+                if sparse_no_duplicates_in_grid(&g1, &g2) {
+
+
+                let across_surfaces = vec![across_surface_1.clone(), 
+                across_surface_2.clone(), clue.clone()];
                 let down_surfaces = down_combo.iter().map(|(s, _, _)| s).cloned().collect();
                 let solution = QuinianCrossword {
                     grid1: g1.clone(),
@@ -218,8 +229,35 @@ fn find_grids<F>(
                     across_surfaces,
                     down_surfaces,
                 };
-                on_found(&solution, size, score);
+                on_found(&solution, size, 6);
+                }
+
             }
+
+
+            // let score = no_surface_count;
+
+            // if illegal_count == 0
+            //     && no_surface_count <= allowed_missing_surfaces
+            //     && no_duplicates_in_grid(size, &g1, &g2)
+            // {
+            //     let mut across_surfaces = vec![across_surface_1.clone(), across_surface_2.clone()];
+            //     for final_word_status in final_word_statuses {
+            //         match final_word_status {
+            //             PairStatus::HasSurface(surface) => across_surfaces.push(surface),
+            //             PairStatus::Words => across_surfaces.push("[To write...]".to_string()),
+            //             PairStatus::NotWords => todo!(),
+            //         }
+            //     }
+            //     let down_surfaces = down_combo.iter().map(|(s, _, _)| s).cloned().collect();
+            //     let solution = QuinianCrossword {
+            //         grid1: g1.clone(),
+            //         grid2: g2.clone(),
+            //         across_surfaces,
+            //         down_surfaces,
+            //     };
+            //     on_found(&solution, size, score);
+            // }
         }
         if i % 10000 == 0 {
             let duration = batch_start_time.elapsed();
@@ -228,6 +266,51 @@ fn find_grids<F>(
             batch_start_time = Instant::now();
         }
     }
+}
+
+fn find_final_row_candidates<'a>(
+    lookup: &'a PairFirstAndThirdLookup,
+    grid1: &Grid,
+    grid2: &Grid,
+    // weird hack so that i can use the default in the
+    // map lookup
+    empty: &'a Vec<MultiSurface>,
+) -> Vec<&'a MultiSurface> {
+    // lookup those that fit the first two letters...
+    let mask1 = find_row_mask(grid1, 4, vec![0,2]);
+    let mask2 = find_row_mask(grid2, 4, vec![0,2]);
+    let maybe_candidates = lookup.get(&(mask1, mask2));
+    if maybe_candidates.is_none() {
+        return vec![];
+    }
+    //inlined this because rust madness
+    let matches_last = |candidate: &MultiSurface| {
+        let (_clue, w1, w2) = candidate;
+        //sanity check
+        assert!(w1[0] == grid1[4][0]);
+        assert!(w1[2] == grid1[4][2]);
+        assert!(w2[0] == grid2[4][0]);
+        assert!(w2[2] == grid2[4][2]);
+        return (w1[4] == grid1[4][4]) && (w2[4] == grid2[4][4]);
+    };
+    return maybe_candidates.unwrap_or(empty)
+     .into_iter()
+     .filter(|candidate| { 
+         return matches_last(*candidate);
+        })
+    //  .filter(
+    //  |candidate: MultiSurface| {
+    //     let (clue, w1, w2) = candidate;
+    //     //sanity check
+    //     assert!(w1[0] == grid1[4][0]);
+    //     assert!(w1[2] == grid1[4][2]);
+    //     assert!(w2[0] == grid2[4][0]);
+    //     assert!(w2[2] == grid2[4][2]);
+    //     return (w1[4] == grid1[4][4]) && (w2[4] == grid2[4][4]);
+    // })
+    // matches_last)
+     .collect();
+
 }
 
 /// Find all quinian grids for the given clues
@@ -250,7 +333,8 @@ pub fn find_solutions<F>(
     println!("Found {} words", word_list.len());
     println!("Found {} pairs", ms_pairs.len());
     let ms_pairs_cloned = ms_pairs.clone();
-    let pair_prefix_lookup = make_pair_prefix_lookup(&ms_pairs_cloned);
+    // let pair_prefix_lookup = make_pair_prefix_lookup(&ms_pairs_cloned);
+    let pair_prefix_lookup = make_first_and_third_prefix_lookup(&ms_pairs_cloned);
     println!("made double prefix lookup");
     // find any good grids
     find_grids(

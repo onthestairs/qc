@@ -98,10 +98,19 @@ pub fn find_col_prefix(grid: &Grid, col: usize, l: usize) -> Word {
     return prefix;
 }
 
-/// Get the prefix of size `l` in the given column
+/// Get the mask specified in the given column
 pub fn find_col_mask(grid: &Grid, col: usize,  mask: Vec<usize>) -> Word {
     let mut prefix = vec![];
     for row in mask {
+        prefix.push(grid[row][col])
+    }
+    return prefix;
+}
+
+/// Get the mask specified in the given row
+pub fn find_row_mask(grid: &Grid, row: usize,  mask: Vec<usize>) -> Word {
+    let mut prefix = vec![];
+    for col in mask {
         prefix.push(grid[row][col])
     }
     return prefix;
@@ -131,6 +140,25 @@ pub fn get_all_words(g: &Grid) -> Vec<Word> {
     words.append(&mut downs);
     return words;
 }
+
+/// Get all the words in the grid (across and down)
+pub fn sparse_get_all_words(g: &Grid) -> Vec<Word> {
+    let rows = vec![0,2,4];
+    let mut words: Vec<Word> = rows.into_iter()
+        .map(|row| {
+            return get_word_in_row(g, row).clone();
+        })
+        .collect();
+    let cols = vec![0,2,4];
+    let mut downs: Vec<Word> = cols.into_iter()
+        .map(|col| {
+            return get_word_in_col(g, col);
+        })
+        .collect();
+    words.append(&mut downs);
+    return words;
+}
+
 
 /// Get all the across words in the grid after (and not
 /// including) the given row
