@@ -6,6 +6,8 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::time::Instant;
 
+use crate::generate::searcher::{find_possible_downs, no_duplicates_in_grid, place_down_clues};
+
 use super::data::get_multi_surfaces;
 use super::data::make_ms_pairs;
 use super::data::make_pair_prefix_lookup;
@@ -18,66 +20,15 @@ use super::grid::reset_grid;
 
 use super::data::PairPrefixLookup;
 use super::data::Word;
-use super::grid::find_col_prefix;
-use super::grid::get_all_words;
-use super::grid::place_word_in_col_mut;
-use super::grid::Grid;
+
 use super::qc::QuinianCrossword;
-
-fn find_possible_downs<'a>(
-    lookup: &'a PairPrefixLookup,
-    // weird hack so that i can use the default in the
-    // map lookup
-    e: &'a Vec<(String, Word, Word)>,
-    grid1: &Grid,
-    grid2: &Grid,
-) -> Vec<Vec<&'a (String, Word, Word)>> {
-    let size = grid1.len();
-    // find the possible pairs in each column
-    let ds: Vec<&Vec<(String, Word, Word)>> = (0..size)
-        .map(|col| {
-            let prefix1 = find_col_prefix(grid1, col, 2);
-            let prefix2 = find_col_prefix(grid2, col, 2);
-            let maybe_down_pairs = lookup.get(&(prefix1, prefix2));
-            let down_pairs = maybe_down_pairs.unwrap_or(e);
-            return down_pairs;
-        })
-        .collect();
-    // Get every combo of possible placements in the columns
-    return ds.into_iter().multi_cartesian_product().collect();
-}
-
-fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&(String, Word, Word)>) {
-    let mut col = 0;
-    for (_, w1, w2) in down_combos {
-        place_word_in_col_mut(g1, col, w1);
-        place_word_in_col_mut(g2, col, w2);
-        col += 1;
-    }
-}
-
-fn no_duplicates_in_grid(size: usize, g1: &Grid, g2: &Grid) -> bool {
-    let words1 = get_all_words(g1);
-    let words2 = get_all_words(g2);
-    let mut all_words: HashSet<Word> = words1.into_iter().collect();
-    for word in words2 {
-        all_words.insert(word);
-    }
-    let expected_len = (2 * size) * 2;
-    return expected_len == all_words.len();
-}
+use super::searcher::{PairStatus, Searcher};
 
 /// Make a hash of a crossword
 pub fn hash_crossword(crossword: &QuinianCrossword) -> u64 {
     let mut hasher = DefaultHasher::new();
     crossword.hash(&mut hasher);
     return hasher.finish();
-}
-
-enum PairStatus {
-    HasSurface(String),
-    Words,
-    NotWords,
 }
 
 fn find_grids<F>(
@@ -176,6 +127,59 @@ fn find_grids<F>(
             let percent = (i as f32 / number_of_combos as f32) * 100.0;
             println!("Done {i} ({percent}%) in {duration:?}");
             batch_start_time = Instant::now();
+        }
+    }
+}
+
+fn find_grids_with_searcher<T, F>(
+    start_index: usize,
+    allowed_missing_surfaces: usize,
+    searcher: &mut T,
+    on_found: F,
+) where
+    T: Searcher,
+    F: Fn(&QuinianCrossword, String, usize) -> (),
+{
+    let mut i = 0;
+    let crossword_type = searcher.crossword_type();
+    let mut batch_start_time = Instant::now();
+    // get all the initial pairs
+    let initial_pairs = searcher.get_initial_pairs();
+    for pairs in initial_pairs {
+        i += 1;
+        if i < start_index {
+            continue;
+        }
+        searcher.reset_and_place_initial_pairs(&pairs);
+        for other_pairs in searcher.get_other_pairs() {
+            searcher.place_other_pairs(&other_pairs);
+            let final_word_statuses = searcher.get_final_statuses();
+
+            let mut illegal_count = 0;
+            let mut no_surface_count = 0;
+            for final_word_status in &final_word_statuses {
+                match final_word_status {
+                    PairStatus::HasSurface(_) => {}
+                    PairStatus::Words => no_surface_count += 1,
+                    PairStatus::NotWords => illegal_count += 1,
+                }
+            }
+            let score = no_surface_count;
+
+            if illegal_count == 0
+                && no_surface_count <= allowed_missing_surfaces
+                && searcher.is_happy()
+            {
+                let quinian_crossword = searcher.get_crossword();
+                on_found(&quinian_crossword, crossword_type.clone(), score);
+            }
+            if i % 10000 == 0 {
+                let duration = batch_start_time.elapsed();
+                // let percent = (i as f32 / number_of_combos as f32) * 100.0;
+                let percent = (i as f32 / 100 as f32) * 100.0;
+                println!("Done {i} ({percent}%) in {duration:?}");
+                batch_start_time = Instant::now();
+            }
         }
     }
 }
