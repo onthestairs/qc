@@ -137,23 +137,24 @@ fn find_grids_with_searcher<T, F>(
     searcher: &mut T,
     on_found: F,
 ) where
-    T: Searcher,
+    T: Searcher + Clone,
     F: Fn(&QuinianCrossword, String, usize) -> (),
 {
     let mut i = 0;
     let crossword_type = searcher.crossword_type();
     let mut batch_start_time = Instant::now();
     // get all the initial pairs
+    let mut grids = searcher.init_grids();
     let initial_pairs = searcher.get_initial_pairs();
     for pairs in initial_pairs {
         i += 1;
         if i < start_index {
             continue;
         }
-        searcher.reset_and_place_initial_pairs(&pairs);
-        for other_pairs in searcher.get_other_pairs() {
-            searcher.place_other_pairs(&other_pairs);
-            let final_word_statuses = searcher.get_final_statuses();
+        searcher.reset_and_place_initial_pairs(&mut grids, &pairs);
+        for other_pairs in searcher.get_other_pairs(&grids) {
+            searcher.place_other_pairs(&mut grids, &other_pairs);
+            let final_word_statuses = searcher.get_final_statuses(&grids);
 
             let mut illegal_count = 0;
             let mut no_surface_count = 0;
@@ -168,7 +169,7 @@ fn find_grids_with_searcher<T, F>(
 
             if illegal_count == 0
                 && no_surface_count <= allowed_missing_surfaces
-                && searcher.is_happy()
+                && searcher.is_happy(&grids)
             {
                 let quinian_crossword = searcher.get_crossword();
                 on_found(&quinian_crossword, crossword_type.clone(), score);
