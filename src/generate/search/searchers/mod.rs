@@ -23,6 +23,8 @@ pub enum PairStatus {
 pub trait Searcher {
     /// The grids
     type Grids;
+    /// The sufaces
+    type Surfaces;
     /// Any params needed to init the searcher
     type Params;
     /// Make a new Searcher
@@ -30,21 +32,37 @@ pub trait Searcher {
     /// Return the crossword type
     fn crossword_type(&self) -> String;
     /// Initialise some grids
-    fn init_grids(&self) -> Self::Grids;
+    fn init_grids(&self) -> (Self::Grids, Self::Surfaces);
+    /// Calculate the number of initial pairs
+    fn calculate_number_of_initial_pairs(&self) -> usize;
     /// Get the first pairs to place
     fn get_initial_pairs(
         &self,
     ) -> Combinations<std::slice::Iter<(std::string::String, Vec<char>, Vec<char>)>>;
     /// Reset the grid and place initial pairs
-    fn reset_and_place_initial_pairs(&self, grids: &mut Self::Grids, pairs: &Vec<&Pair>);
+    fn reset_and_place_initial_pairs(
+        &self,
+        grids: &mut Self::Grids,
+        surfaces: &mut Self::Surfaces,
+        pairs: &Vec<&Pair>,
+    );
     /// Get other pairs
     fn get_other_pairs(&self, grids: &Self::Grids) -> Vec<Vec<&Pair>>;
     /// Place the other pairs
-    fn place_other_pairs(&self, grids: &mut Self::Grids, pairs: &Vec<&Pair>);
+    fn place_other_pairs(
+        &self,
+        grids: &mut Self::Grids,
+        surfaces: &mut Self::Surfaces,
+        pairs: &Vec<&Pair>,
+    );
     /// Get the final status of the words
-    fn get_final_statuses(&self, grids: &Self::Grids) -> Vec<PairStatus>;
+    fn get_final_statuses(
+        &self,
+        grids: &Self::Grids,
+        surfaces: &mut Self::Surfaces,
+    ) -> Vec<PairStatus>;
     /// Is the final grids good
     fn is_happy(&self, grids: &Self::Grids) -> bool;
     /// Get the final crossword
-    fn get_crossword(&self, grids: &Self::Grids) -> QuinianCrossword;
+    fn get_crossword(&self, grids: &Self::Grids, surfaces: &Self::Surfaces) -> QuinianCrossword;
 }

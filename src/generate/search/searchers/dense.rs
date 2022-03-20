@@ -32,6 +32,7 @@ pub struct Dense {
 impl Searcher for Dense {
     type Params = usize;
     type Grids = (Grid, Grid);
+    type Surfaces = (Vec<Option<String>>, Vec<Option<String>>);
     fn new(params: Self::Params, clues: Vec<(String, Word)>) -> Dense {
         let size = params;
         let filtered_clues = clues
@@ -60,8 +61,17 @@ impl Searcher for Dense {
         return format!("dense_{}", self.size);
     }
 
-    fn init_grids(&self) -> Self::Grids {
-        return (make_empty_grid(self.size), make_empty_grid(self.size));
+    fn init_grids(&self) -> (Self::Grids, Self::Surfaces) {
+        let grid1 = make_empty_grid(self.size);
+        let grid2 = make_empty_grid(self.size);
+        let across_surfaces = vec![None; self.size];
+        let down_surfaces = vec![None; self.size];
+        return ((grid1, grid2), (across_surfaces, down_surfaces));
+    }
+
+    fn calculate_number_of_initial_pairs(&self) -> usize {
+        let number_of_pairs = self.pairs.len();
+        return number_of_pairs * (number_of_pairs - 1);
     }
 
     fn get_initial_pairs(
@@ -70,11 +80,18 @@ impl Searcher for Dense {
         return self.pairs.iter().combinations(2);
     }
 
-    fn reset_and_place_initial_pairs(&self, grids: &mut Self::Grids, pairs: &Vec<&Pair>) {
+    fn reset_and_place_initial_pairs(
+        &self,
+        grids: &mut Self::Grids,
+        (across_surfaces, _down_surfaces): &mut Self::Surfaces,
+        pairs: &Vec<&Pair>,
+    ) {
         reset_grid(&mut grids.0);
         reset_grid(&mut grids.1);
         let (across_surface_1, w11, w12) = pairs[0];
+        across_surfaces[0] = Some(across_surface_1.clone());
         let (across_surface_2, w21, w22) = pairs[1];
+        across_surfaces[1] = Some(across_surface_2.clone());
         init_grid(&mut grids.0, w11, w21);
         init_grid(&mut grids.1, w12, w22);
     }
@@ -83,21 +100,34 @@ impl Searcher for Dense {
         return find_possible_downs(&self.prefix_lookup, &self.empty_vec, &grids.0, &grids.1);
     }
 
-    fn place_other_pairs(&self, grids: &mut Self::Grids, pairs: &Vec<&Pair>) {
-        place_down_clues(&mut grids.0, &mut grids.1, &pairs);
+    fn place_other_pairs(
+        &self,
+        grids: &mut Self::Grids,
+        surfaces: &mut Self::Surfaces,
+        pairs: &Vec<&Pair>,
+    ) {
+        place_down_clues(&mut grids.0, &mut grids.1, &mut surfaces.1, &pairs);
     }
 
-    fn get_final_statuses(&self, grids: &Self::Grids) -> Vec<PairStatus> {
+    fn get_final_statuses(
+        &self,
+        grids: &Self::Grids,
+        (across_surfaces, _down_surfaces): &mut Self::Surfaces,
+    ) -> Vec<PairStatus> {
         // check if the final across words are proper words
         let final_words_1 = get_words_in_row_after(&grids.0, 1);
         let final_words_2 = get_words_in_row_after(&grids.1, 1);
         let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
 
         let final_word_statuses: Vec<PairStatus> = final_across_pairs
-            .map(|(w1, w2)| {
+            .enumerate()
+            .map(|(row, (w1, w2))| {
                 if self.word_list.contains(w1) && self.word_list.contains(w2) {
                     match self.pairs_to_surface.get(&(w1.clone(), w2.clone())) {
-                        Some(surface) => PairStatus::HasSurface(surface.clone()),
+                        Some(surface) => {
+                            across_surfaces[2 + row] = Some(surface.clone());
+                            PairStatus::HasSurface(surface.clone())
+                        }
                         None => PairStatus::Words,
                     }
                 } else {
@@ -112,12 +142,16 @@ impl Searcher for Dense {
         return no_duplicates_in_grid(self.size, &grids.0, &grids.1);
     }
 
-    fn get_crossword(&self, grids: &Self::Grids) -> QuinianCrossword {
+    fn get_crossword(
+        &self,
+        grids: &Self::Grids,
+        (across_surfaces, down_surfaces): &Self::Surfaces,
+    ) -> QuinianCrossword {
         return QuinianCrossword {
             grid1: grids.0.clone(),
             grid2: grids.1.clone(),
-            across_surfaces: vec![],
-            down_surfaces: vec![],
+            across_surfaces: across_surfaces.clone(),
+            down_surfaces: down_surfaces.clone(),
         };
     }
 }
@@ -147,11 +181,17 @@ pub fn find_possible_downs<'a>(
 }
 
 /// Place down clues in a dense grid
-pub fn place_down_clues(g1: &mut Grid, g2: &mut Grid, down_combos: &Vec<&(String, Word, Word)>) {
+pub fn place_down_clues(
+    g1: &mut Grid,
+    g2: &mut Grid,
+    surfaces: &mut Vec<Option<String>>,
+    down_combos: &Vec<&(String, Word, Word)>,
+) {
     let mut col = 0;
-    for (_, w1, w2) in down_combos {
+    for (surface, w1, w2) in down_combos {
         place_word_in_col_mut(g1, col, w1);
         place_word_in_col_mut(g2, col, w2);
+        surfaces[col] = Some(surface.clone());
         col += 1;
     }
 }
