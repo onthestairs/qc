@@ -1,12 +1,14 @@
 //! Generate all words
 
+pub mod searchers;
+
 use itertools::Itertools;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::time::Instant;
 
-use crate::generate::searcher::{find_possible_downs, no_duplicates_in_grid, place_down_clues};
+use searchers::dense::{find_possible_downs, no_duplicates_in_grid, place_down_clues};
 
 use super::data::get_multi_surfaces;
 use super::data::make_ms_pairs;
@@ -22,7 +24,8 @@ use super::data::PairPrefixLookup;
 use super::data::Word;
 
 use super::qc::QuinianCrossword;
-use super::searcher::{PairStatus, Searcher};
+use searchers::PairStatus;
+use searchers::Searcher;
 
 /// Make a hash of a crossword
 pub fn hash_crossword(crossword: &QuinianCrossword) -> u64 {
@@ -104,15 +107,18 @@ fn find_grids<F>(
                 && no_surface_count <= allowed_missing_surfaces
                 && no_duplicates_in_grid(size, &g1, &g2)
             {
-                let mut across_surfaces = vec![across_surface_1.clone(), across_surface_2.clone()];
+                let mut across_surfaces = vec![
+                    Some(across_surface_1.clone()),
+                    Some(across_surface_2.clone()),
+                ];
                 for final_word_status in final_word_statuses {
                     match final_word_status {
-                        PairStatus::HasSurface(surface) => across_surfaces.push(surface),
-                        PairStatus::Words => across_surfaces.push("[To write...]".to_string()),
+                        PairStatus::HasSurface(surface) => across_surfaces.push(Some(surface)),
+                        PairStatus::Words => across_surfaces.push(None),
                         PairStatus::NotWords => todo!(),
                     }
                 }
-                let down_surfaces = down_combo.iter().map(|(s, _, _)| s).cloned().collect();
+                let down_surfaces = down_combo.iter().map(|(s, _, _)| Some(s.clone())).collect();
                 let solution = QuinianCrossword {
                     grid1: g1.clone(),
                     grid2: g2.clone(),
@@ -131,13 +137,14 @@ fn find_grids<F>(
     }
 }
 
-fn find_grids_with_searcher<T, F>(
+/// Find grids using the given searcher
+pub fn find_grids_with_searcher<T, F>(
     start_index: usize,
     allowed_missing_surfaces: usize,
-    searcher: &mut T,
+    searcher: &T,
     on_found: F,
 ) where
-    T: Searcher + Clone,
+    T: Searcher,
     F: Fn(&QuinianCrossword, String, usize) -> (),
 {
     let mut i = 0;
@@ -171,7 +178,7 @@ fn find_grids_with_searcher<T, F>(
                 && no_surface_count <= allowed_missing_surfaces
                 && searcher.is_happy(&grids)
             {
-                let quinian_crossword = searcher.get_crossword();
+                let quinian_crossword = searcher.get_crossword(&grids);
                 on_found(&quinian_crossword, crossword_type.clone(), score);
             }
             if i % 10000 == 0 {

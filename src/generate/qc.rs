@@ -15,9 +15,9 @@ pub struct QuinianCrossword {
     /// the right hand grid
     pub grid2: Grid,
     /// the across surfaces
-    pub across_surfaces: Vec<String>,
+    pub across_surfaces: Vec<Option<String>>,
     /// the down surfaces
-    pub down_surfaces: Vec<String>,
+    pub down_surfaces: Vec<Option<String>>,
 }
 
 /// print a solution
@@ -59,12 +59,16 @@ fn print_grid(grid: &Grid) -> String {
     return table.render();
 }
 
-fn print_surfaces(surfaces: &Vec<String>) -> String {
+fn print_surfaces(surfaces: &Vec<Option<String>>) -> String {
     let mut surfaces_str = String::new();
-    for (i, surface) in surfaces.iter().enumerate() {
+    for (i, maybe_surface) in surfaces.iter().enumerate() {
         let n = i + 1;
-        let surface = format!("{n}. {surface}").to_string();
-        surfaces_str += &surface;
+        let surface_str = match maybe_surface {
+            Some(surface) => surface.clone(),
+            None => "missing".to_string(),
+        };
+        let full_surface = format!("{n}. {surface_str}").to_string();
+        surfaces_str += &full_surface;
         surfaces_str += "\n";
     }
     return surfaces_str;

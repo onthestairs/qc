@@ -63,7 +63,7 @@ pub fn select_all_clues(connection: &sqlite::Connection) -> Option<Vec<(String, 
 /// Ensure that the table exists
 pub fn ensure_results_table_exists(connection: &sqlite::Connection) {
     connection
-        .execute("CREATE TABLE IF NOT EXISTS results (crossword TEXT, hash INT, size INT, score INT, UNIQUE(hash));")
+        .execute("CREATE TABLE IF NOT EXISTS results (crossword TEXT, hash INT, crossword_type TEXT, score INT, UNIQUE(hash));")
         .unwrap();
 }
 
@@ -71,17 +71,17 @@ pub fn ensure_results_table_exists(connection: &sqlite::Connection) {
 pub fn insert_result_into_table<'a>(
     connection: &sqlite::Connection,
     crossword: &QuinianCrossword,
-    size: usize,
+    crossword_type: String,
     score: usize,
 ) -> Option<()> {
     let mut statement = connection
-        .prepare("INSERT INTO results (crossword, hash, size, score) VALUES (?,?,?,?);")
+        .prepare("INSERT INTO results (crossword, hash, crossword_type, score) VALUES (?,?,?,?);")
         .unwrap();
     let serialised_crossword = serde_json::to_string(crossword).unwrap();
     let crossword_hash = hash_crossword(crossword);
     let _ = statement.bind(1, &Value::String(serialised_crossword.to_string()));
     let _ = statement.bind(2, &Value::Integer(crossword_hash as i64));
-    let _ = statement.bind(3, &Value::Integer(size as i64));
+    let _ = statement.bind(3, &Value::String(crossword_type));
     let _ = statement.bind(4, &Value::Integer(score as i64));
     let result = statement.next();
     match result {
