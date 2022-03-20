@@ -6,7 +6,7 @@ use crate::generate::data::Word;
 
 /// Make a map of word to how many times it is used on wikiepedia
 pub fn get_words_wiki_frequencies() -> HashMap<Word, u32> {
-    let file = File::open("./data/en_words_1_3-4.txt").unwrap();
+    let file = File::open("./data/en_words_1_3-5.txt").unwrap();
     let mut rdr = csv::ReaderBuilder::new().delimiter(b' ').from_reader(file);
     let mut word_freqs: HashMap<Word, u32> = HashMap::new();
     for result in rdr.records() {

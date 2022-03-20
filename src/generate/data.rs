@@ -6,6 +6,12 @@ use std::collections::{HashMap, HashSet};
 /// type alias for a word
 pub type Word = Vec<char>;
 
+/// type alias for a clue surface
+pub type Clue = String;
+
+/// type alias for two answers with the same clue.
+pub type MultiSurface = (Clue, Word, Word);
+
 /// find all surfaces with many solutions of length `length`
 pub fn get_multi_surfaces(clues: &Vec<(String, Word)>) -> HashMap<String, HashSet<Word>> {
     // make a map from surface to a set of solutions
@@ -44,7 +50,7 @@ pub fn make_pairs_to_surfaces(
 }
 
 /// make a vec of all solution pairs
-pub fn make_ms_pairs(multi_surfaces: &HashMap<String, HashSet<Word>>) -> Vec<(String, Word, Word)> {
+pub fn make_ms_pairs(multi_surfaces: &HashMap<String, HashSet<Word>>) -> Vec<MultiSurface> {
     let mut pairs = vec![];
     for (surface, solutions) in multi_surfaces {
         let solutions_vec: Vec<&Word> = solutions.iter().collect();
@@ -64,11 +70,14 @@ pub fn make_ms_pairs(multi_surfaces: &HashMap<String, HashSet<Word>>) -> Vec<(St
 }
 
 /// Type for doing a double prefix lookup
-pub type PairPrefixLookup = HashMap<(Word, Word), Vec<(String, Word, Word)>>;
+pub type PairPrefixLookup = HashMap<(Word, Word), Vec<MultiSurface>>;
 
-/// Make a lookup from the 2-prefix or each word in a pair, to the
-/// poissible pairs
-pub fn make_pair_prefix_lookup(pairs: &Vec<(String, Word, Word)>) -> PairPrefixLookup {
+/// Type for doing a lookup by first and third letters of a pair of answers
+pub type PairFirstAndThirdLookup = HashMap<(Word, Word), Vec<MultiSurface>>;
+
+/// Make a lookup from the 2-prefix of each word in a pair, to the
+/// possible pairs
+pub fn make_pair_prefix_lookup(pairs: &Vec<MultiSurface>) -> PairPrefixLookup {
     let mut lookup: PairPrefixLookup = HashMap::new();
     for (s, w1, w2) in pairs {
         let prefix1 = w1.iter().take(2).map(|c| c.clone()).collect();
@@ -79,9 +88,24 @@ pub fn make_pair_prefix_lookup(pairs: &Vec<(String, Word, Word)>) -> PairPrefixL
     return lookup;
 }
 
+/// Make a lookup from the 1st and 3rd characters of each word in a pair, to the
+/// possible pairs
+pub fn make_first_and_third_prefix_lookup(pairs: &Vec<MultiSurface>) -> PairFirstAndThirdLookup {
+    let mut lookup: PairPrefixLookup = HashMap::new();
+    for (s, w1, w2) in pairs {
+        // let prefix1 =  w1.iter().take(2).map(|c| c.clone()).collect();
+        // let prefix2 = w2.iter().take(2).map(|c| c.clone()).collect();
+        let lookup1 = vec![w1[0], w1[2]];
+        let lookup2 = vec![w2[0], w2[2]];
+        let key_words = lookup.entry((lookup1, lookup2)).or_insert(vec![]);
+        (*key_words).push((s.clone(), w1.clone(), w2.clone()));
+    }
+    return lookup;
+}
+
 /// Make a map from a given pair to its surface
 pub fn make_pairs_to_surface(
-    ms_pairs: &Vec<(String, Word, Word)>,
+    ms_pairs: &Vec<MultiSurface>,
 ) -> HashMap<(Word, Word), String> {
     let mut lookup = HashMap::new();
     for (surface, w1, w2) in ms_pairs {
@@ -92,7 +116,7 @@ pub fn make_pairs_to_surface(
 }
 
 /// Make a set of all known words that are the solution to a multi surface
-pub fn make_word_list(ms_pairs: &Vec<(String, Word, Word)>) -> HashSet<Word> {
+pub fn make_word_list(ms_pairs: &Vec<MultiSurface>) -> HashSet<Word> {
     let mut words = HashSet::new();
     for (_, w, _) in ms_pairs {
         words.insert(w.clone());

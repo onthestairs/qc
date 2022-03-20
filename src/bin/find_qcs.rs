@@ -82,12 +82,14 @@ fn main() {
     ensure_results_table_exists(&connection);
     let clues = get_clues().unwrap();
     let word_frequencies = get_words_wiki_frequencies();
-    let filtered_clues = filter_clues(clues, args.size, word_frequencies, args.min_word_frequency);
+    // let filtered_clues = filter_clues(clues, args.size, word_frequencies, args.min_word_frequency);
+    let filtered_clues = filter_clues(clues, 5, word_frequencies, args.min_word_frequency);
     let save_crossword = |crossword: &QuinianCrossword, size: usize, score: usize| {
         insert_result_into_table(&connection, crossword, size, score);
     };
     find_solutions(
-        args.size,
+        // args.size,
+        5, 
         args.allowed_missing_surfaces,
         args.start_index,
         filtered_clues,
