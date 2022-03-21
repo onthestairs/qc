@@ -95,15 +95,15 @@ pub fn insert_result_into_table<'a>(
 /// Get all the clues in the db
 pub fn get_results(
     connection: &sqlite::Connection,
-    size: usize,
+    crossword_type: String,
     score_at_most: usize,
 ) -> Option<Vec<(QuinianCrossword, u64)>> {
     let mut crosswords = vec![];
 
     let mut statement = connection
-        .prepare("SELECT crossword, score FROM results WHERE size = ? AND score <= ?")
+        .prepare("SELECT crossword, score FROM results WHERE crossword_type = ? AND score <= ?")
         .unwrap();
-    let _ = statement.bind(1, &Value::Integer(size as i64));
+    let _ = statement.bind(1, &Value::String(crossword_type));
     let _ = statement.bind(2, &Value::Integer(score_at_most as i64));
 
     while let State::Row = statement.next().unwrap() {

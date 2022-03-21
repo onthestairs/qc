@@ -29,10 +29,17 @@ pub struct Dense {
     empty_vec: Vec<Pair>,
 }
 
+/// The stages of placing clues in a dense grid
+pub enum DenseStage {
+    /// Placing the down clues
+    Downs,
+}
+
 impl Searcher for Dense {
     type Params = usize;
     type Grids = (Grid, Grid);
     type Surfaces = (Vec<Option<String>>, Vec<Option<String>>);
+    type Stage = DenseStage;
     fn new(params: Self::Params, clues: Vec<(String, Word)>) -> Dense {
         let size = params;
         let filtered_clues = clues
@@ -69,6 +76,14 @@ impl Searcher for Dense {
         return ((grid1, grid2), (across_surfaces, down_surfaces));
     }
 
+    fn get_initial_stage(&self) -> Self::Stage {
+        return DenseStage::Downs;
+    }
+
+    fn get_next_stage(&self, _: &Self::Stage) -> Option<Self::Stage> {
+        return None;
+    }
+
     fn calculate_number_of_initial_pairs(&self) -> usize {
         let number_of_pairs = self.pairs.len();
         return number_of_pairs * (number_of_pairs - 1);
@@ -96,12 +111,13 @@ impl Searcher for Dense {
         init_grid(&mut grids.1, w12, w22);
     }
 
-    fn get_other_pairs(&self, grids: &Self::Grids) -> Vec<Vec<&Pair>> {
+    fn get_next_pairs(&self, _: &Self::Stage, grids: &Self::Grids) -> Vec<Vec<&Pair>> {
         return find_possible_downs(&self.prefix_lookup, &self.empty_vec, &grids.0, &grids.1);
     }
 
-    fn place_other_pairs(
+    fn place_next_pairs(
         &self,
+        _: &Self::Stage,
         grids: &mut Self::Grids,
         surfaces: &mut Self::Surfaces,
         pairs: &Vec<&Pair>,

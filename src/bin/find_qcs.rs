@@ -16,7 +16,7 @@ use qc::store::{ensure_results_table_exists, get_connection, insert_result_into_
 #[clap(author, version, about, long_about = None)]
 struct Args {
     #[clap(arg_enum)]
-    searcher: SearcherArg,
+    searcher: CrosswordType,
 
     /// Number of allowed non-surface words
     #[clap(short, long, default_value_t = 0)]
@@ -32,7 +32,7 @@ struct Args {
 }
 
 #[derive(clap::ArgEnum, Clone)]
-enum SearcherArg {
+enum CrosswordType {
     Dense3,
     Dense4,
     Dense5,
@@ -88,7 +88,7 @@ fn main() {
         insert_result_into_table(&connection, crossword, crossword_type, score);
     };
     match args.searcher {
-        SearcherArg::Dense3 => {
+        CrosswordType::Dense3 => {
             let searcher = Dense::new(3, filtered_clues);
             find_grids_with_searcher(
                 args.allowed_missing_surfaces,
@@ -97,7 +97,7 @@ fn main() {
                 save_crossword,
             );
         }
-        SearcherArg::Dense4 => {
+        CrosswordType::Dense4 => {
             let searcher = Dense::new(4, filtered_clues);
             find_grids_with_searcher(
                 args.allowed_missing_surfaces,
@@ -106,7 +106,7 @@ fn main() {
                 save_crossword,
             );
         }
-        SearcherArg::Dense5 => {
+        CrosswordType::Dense5 => {
             let searcher = Dense::new(5, filtered_clues);
             find_grids_with_searcher(
                 args.allowed_missing_surfaces,
@@ -115,7 +115,7 @@ fn main() {
                 save_crossword,
             );
         }
-        SearcherArg::Alternating5 => {
+        CrosswordType::Alternating5 => {
             let searcher = Alternating::new(5, filtered_clues);
             find_grids_with_searcher(
                 args.allowed_missing_surfaces,
@@ -124,7 +124,7 @@ fn main() {
                 save_crossword,
             );
         }
-        SearcherArg::Alternating6 => {
+        CrosswordType::Alternating6 => {
             let searcher = Alternating::new(6, filtered_clues);
             find_grids_with_searcher(
                 args.allowed_missing_surfaces,
@@ -133,7 +133,7 @@ fn main() {
                 save_crossword,
             );
         }
-        SearcherArg::Alternating7 => {
+        CrosswordType::Alternating7 => {
             let searcher = Alternating::new(7, filtered_clues);
             find_grids_with_searcher(
                 args.allowed_missing_surfaces,

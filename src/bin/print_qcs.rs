@@ -13,13 +13,23 @@ use qc::store::get_connection;
 use qc::store::get_results;
 use qc::store::word_frequencies::get_words_wiki_frequencies;
 
+#[derive(clap::ArgEnum, Clone)]
+enum CrosswordType {
+    Dense3,
+    Dense4,
+    Dense5,
+    Alternating5,
+    Alternating6,
+    Alternating7,
+}
+
 /// Program to print quinian crosswords
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Size of the grid
-    #[clap(short, long, default_value_t = 4)]
-    size: usize,
+    /// Crossword type
+    #[clap(arg_enum)]
+    crossword_type: CrosswordType,
 
     /// Number of allowed non-surface words
     #[clap(short, long, default_value_t = 0)]
@@ -98,11 +108,27 @@ fn all_words_are_common(
     return all_common;
 }
 
+fn show_crossword_type(crossword_type: CrosswordType) -> String {
+    return match crossword_type {
+        CrosswordType::Dense3 => "dense3".to_string(),
+        CrosswordType::Dense4 => "dense4".to_string(),
+        CrosswordType::Dense5 => "dense5".to_string(),
+        CrosswordType::Alternating5 => "alternating5".to_string(),
+        CrosswordType::Alternating6 => "alternating6".to_string(),
+        CrosswordType::Alternating7 => "alternating7".to_string(),
+    };
+}
+
 fn main() {
     let args = Args::parse();
 
     let connection = get_connection();
-    let solutions = get_results(&connection, args.size, args.allowed_missing_surfaces).unwrap();
+    let solutions = get_results(
+        &connection,
+        show_crossword_type(args.crossword_type),
+        args.allowed_missing_surfaces,
+    )
+    .unwrap();
     let words_wiki_frequencies = get_words_wiki_frequencies();
     let banned_words = get_banned_words();
     let filter_options = FilterOptions {

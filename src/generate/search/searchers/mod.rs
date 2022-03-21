@@ -28,10 +28,16 @@ pub trait Searcher {
     type Surfaces;
     /// Any params needed to init the searcher
     type Params;
+    /// The stages
+    type Stage;
     /// Make a new Searcher
     fn new(params: Self::Params, clues: Vec<(String, Word)>) -> Self;
     /// Return the crossword type
     fn crossword_type(&self) -> String;
+    /// The first stage
+    fn get_initial_stage(&self) -> Self::Stage;
+    /// Get the next stage
+    fn get_next_stage(&self, stage: &Self::Stage) -> Option<Self::Stage>;
     /// Initialise some grids
     fn init_grids(&self) -> (Self::Grids, Self::Surfaces);
     /// Calculate the number of initial pairs
@@ -48,10 +54,11 @@ pub trait Searcher {
         pairs: &Vec<&Pair>,
     );
     /// Get other pairs
-    fn get_other_pairs(&self, grids: &Self::Grids) -> Vec<Vec<&Pair>>;
+    fn get_next_pairs(&self, stage: &Self::Stage, grids: &Self::Grids) -> Vec<Vec<&Pair>>;
     /// Place the other pairs
-    fn place_other_pairs(
+    fn place_next_pairs(
         &self,
+        stage: &Self::Stage,
         grids: &mut Self::Grids,
         surfaces: &mut Self::Surfaces,
         pairs: &Vec<&Pair>,
