@@ -16,6 +16,7 @@ use crate::generate::grid::get_word_in_col;
 use crate::generate::grid::get_word_in_row;
 use crate::generate::grid::make_empty_grid;
 use crate::generate::grid::place_word_in_col_mut;
+use crate::generate::grid::print_grid;
 use crate::generate::grid::Grid;
 use crate::generate::qc::QuinianCrossword;
 
@@ -131,6 +132,7 @@ pub fn find_row_mask(grid: &Grid, row: usize, mask: Vec<usize>) -> Word {
 }
 
 fn sparse_get_words_in_row_after(grid: &Grid, after: usize) -> Vec<&Word> {
+    print_grid(grid);
     let mut words = vec![];
     let mut i = 0;
     for row in grid {
@@ -174,6 +176,7 @@ fn sparse_no_duplicates_in_grid(size: usize, g1: &Grid, g2: &Grid) -> bool {
 }
 
 fn sparse_find_possible_downs<'a>(
+    size: usize,
     lookup: &'a MaskLookup,
     // weird hack so that i can use the default in the
     // map lookup
@@ -182,7 +185,8 @@ fn sparse_find_possible_downs<'a>(
     grid2: &Grid,
 ) -> Vec<Vec<&'a MultiSurface>> {
     // let size = grid1.len();
-    let down_cols = vec![0, 2, 4];
+    // let down_cols = vec![0, 2, 4];
+    let down_cols = (0..size).step_by(2);
     // find the possible pairs in each column
     let ds: Vec<&Vec<MultiSurface>> = down_cols
         .into_iter()
@@ -271,7 +275,13 @@ impl Searcher for Alternating {
     }
 
     fn get_other_pairs(&self, grids: &Self::Grids) -> Vec<Vec<&Pair>> {
-        return sparse_find_possible_downs(&self.mask_lookup, &self.empty_vec, &grids.0, &grids.1);
+        return sparse_find_possible_downs(
+            self.size,
+            &self.mask_lookup,
+            &self.empty_vec,
+            &grids.0,
+            &grids.1,
+        );
     }
 
     fn place_other_pairs(
@@ -290,6 +300,7 @@ impl Searcher for Alternating {
     ) -> Vec<PairStatus> {
         // check if the final across words are proper words
         let final_words_1 = sparse_get_words_in_row_after(&grids.0, 2);
+        dbg!(&final_words_1);
         let final_words_2 = sparse_get_words_in_row_after(&grids.1, 2);
         let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
 
