@@ -86,7 +86,7 @@ pub fn get_word_in_row(grid: &Grid, row: usize) -> &Word {
 }
 
 /// Get the word in a given column
-fn get_word_in_col(grid: &Grid, col: usize) -> Word {
+pub fn get_word_in_col(grid: &Grid, col: usize) -> Word {
     let mut word = vec![];
     for row in 0..grid.len() {
         let c = grid[row][col];

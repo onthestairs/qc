@@ -1,5 +1,6 @@
 //! A searcher for finding quinian crosswords
 
+pub mod alternating;
 pub mod dense;
 
 use itertools::Combinations;

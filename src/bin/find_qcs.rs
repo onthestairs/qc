@@ -4,6 +4,7 @@ use clap::Parser;
 use qc::generate::data::Word;
 use qc::generate::qc::QuinianCrossword;
 use qc::generate::search::find_grids_with_searcher;
+use qc::generate::search::searchers::alternating::Alternating;
 use qc::generate::search::searchers::dense::Dense;
 use qc::generate::search::searchers::Searcher;
 use qc::store::csv::get_clues;
@@ -35,6 +36,9 @@ enum SearcherArg {
     Dense3,
     Dense4,
     Dense5,
+    Alternating5,
+    Alternating6,
+    Alternating7,
 }
 
 /// Should we include the surface/solution in the analysis
@@ -104,6 +108,33 @@ fn main() {
         }
         SearcherArg::Dense5 => {
             let searcher = Dense::new(5, filtered_clues);
+            find_grids_with_searcher(
+                args.allowed_missing_surfaces,
+                args.start_index,
+                &searcher,
+                save_crossword,
+            );
+        }
+        SearcherArg::Alternating5 => {
+            let searcher = Alternating::new(5, filtered_clues);
+            find_grids_with_searcher(
+                args.allowed_missing_surfaces,
+                args.start_index,
+                &searcher,
+                save_crossword,
+            );
+        }
+        SearcherArg::Alternating6 => {
+            let searcher = Alternating::new(6, filtered_clues);
+            find_grids_with_searcher(
+                args.allowed_missing_surfaces,
+                args.start_index,
+                &searcher,
+                save_crossword,
+            );
+        }
+        SearcherArg::Alternating7 => {
+            let searcher = Alternating::new(7, filtered_clues);
             find_grids_with_searcher(
                 args.allowed_missing_surfaces,
                 args.start_index,

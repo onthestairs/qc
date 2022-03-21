@@ -58,7 +58,7 @@ impl Searcher for Dense {
     }
 
     fn crossword_type(&self) -> String {
-        return format!("dense_{}", self.size);
+        return format!("dense{}", self.size);
     }
 
     fn init_grids(&self) -> (Self::Grids, Self::Surfaces) {
