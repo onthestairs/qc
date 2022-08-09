@@ -1,0 +1,5 @@
+Profiling...
+dtrace -x ustackframes=100 -n "profile-97 /pid == 1234/ { @[ustack()] = count(); } tick-60s { exit(0); }"  -o out.user_stacks
+cat out.user_stacks | inferno-collapse-dtrace > stacks.folded
+
+cat stacks.folded | inferno-flamegraph > flamegraph.svg
