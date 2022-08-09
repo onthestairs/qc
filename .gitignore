@@ -5,3 +5,5 @@ node_modules
 *.sqlite
 *.csv
 .DS_Store
+result
+.direnv
