@@ -12,7 +12,7 @@ use qc::store::word_frequencies::get_words_wiki_frequencies;
 use qc::store::{ensure_results_table_exists, get_connection, insert_result_into_table};
 
 /// Program to generate quinian crosswords
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     #[clap(arg_enum)]
@@ -23,7 +23,7 @@ struct Args {
     allowed_missing_surfaces: usize,
 
     /// Start index
-    #[clap(long, default_value_t = 0)]
+    #[clap(short, long, default_value_t = 0)]
     start_index: usize,
 
     /// min word frequency
@@ -31,7 +31,7 @@ struct Args {
     min_word_frequency: Option<u32>,
 }
 
-#[derive(clap::ArgEnum, Clone)]
+#[derive(clap::ArgEnum, Clone, Debug)]
 enum CrosswordType {
     Dense3,
     Dense4,
@@ -91,8 +91,8 @@ fn main() {
         CrosswordType::Dense3 => {
             let searcher = Dense::new(3, filtered_clues);
             find_grids_with_searcher(
-                args.allowed_missing_surfaces,
                 args.start_index,
+                args.allowed_missing_surfaces,
                 &searcher,
                 save_crossword,
             );
@@ -100,8 +100,8 @@ fn main() {
         CrosswordType::Dense4 => {
             let searcher = Dense::new(4, filtered_clues);
             find_grids_with_searcher(
-                args.allowed_missing_surfaces,
                 args.start_index,
+                args.allowed_missing_surfaces,
                 &searcher,
                 save_crossword,
             );
@@ -109,8 +109,8 @@ fn main() {
         CrosswordType::Dense5 => {
             let searcher = Dense::new(5, filtered_clues);
             find_grids_with_searcher(
-                args.allowed_missing_surfaces,
                 args.start_index,
+                args.allowed_missing_surfaces,
                 &searcher,
                 save_crossword,
             );
@@ -118,8 +118,8 @@ fn main() {
         CrosswordType::Alternating5 => {
             let searcher = Alternating::new(5, filtered_clues);
             find_grids_with_searcher(
-                args.allowed_missing_surfaces,
                 args.start_index,
+                args.allowed_missing_surfaces,
                 &searcher,
                 save_crossword,
             );
@@ -127,8 +127,8 @@ fn main() {
         CrosswordType::Alternating6 => {
             let searcher = Alternating::new(6, filtered_clues);
             find_grids_with_searcher(
-                args.allowed_missing_surfaces,
                 args.start_index,
+                args.allowed_missing_surfaces,
                 &searcher,
                 save_crossword,
             );
@@ -136,8 +136,8 @@ fn main() {
         CrosswordType::Alternating7 => {
             let searcher = Alternating::new(7, filtered_clues);
             find_grids_with_searcher(
-                args.allowed_missing_surfaces,
                 args.start_index,
+                args.allowed_missing_surfaces,
                 &searcher,
                 save_crossword,
             );

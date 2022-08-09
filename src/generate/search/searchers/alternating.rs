@@ -6,18 +6,14 @@ use itertools::{Combinations, Itertools};
 
 use crate::generate::data::get_multi_surfaces;
 use crate::generate::data::make_ms_pairs;
-// use crate::generate::data::make_pairs_to_surface;
-// use crate::generate::data::make_word_list_all;
 use crate::generate::data::PairPrefixLookup;
 use crate::generate::data::Word;
 use crate::generate::grid::find_col_prefix;
-// use crate::generate::grid::get_all_words;
 use crate::generate::grid::get_word_in_col;
 use crate::generate::grid::get_word_in_row;
 use crate::generate::grid::make_empty_grid;
 use crate::generate::grid::place_word_in_col_mut;
 use crate::generate::grid::place_word_in_row_mut;
-// use crate::generate::grid::print_grid;
 use crate::generate::grid::Grid;
 use crate::generate::qc::QuinianCrossword;
 
@@ -35,8 +31,6 @@ pub struct Alternating {
     size: usize,
     pairs: Vec<Pair>,
     mask_lookup: MaskLookup,
-    // pairs_to_surface: HashMap<(Word, Word), String>,
-    // word_list: HashSet<Word>,
     empty_vec: Vec<Pair>,
 }
 
@@ -147,19 +141,6 @@ pub fn find_row_mask(grid: &Grid, row: usize, mask: Vec<usize>) -> Word {
     return prefix;
 }
 
-// fn sparse_get_words_in_row_after(grid: &Grid, after: usize) -> Vec<&Word> {
-//     print_grid(grid);
-//     let mut words = vec![];
-//     let mut i = 0;
-//     for row in grid {
-//         if i > after && i % 2 == 0 {
-//             words.push(row);
-//         }
-//         i += 1;
-//     }
-//     return words;
-// }
-
 /// Get all the words in the grid (across and down)
 pub fn sparse_get_all_words(size: usize, g: &Grid) -> Vec<Word> {
     let rows = (0..size).step_by(2);
@@ -237,7 +218,10 @@ fn sparse_find_possible_final_acrosses<'a>(
             let filtered_across_pairs = across_pairs
                 .into_iter()
                 .filter(|(_, w1, w2)| {
-                    return (w1[4] == grid1[row][4]) && (w2[4] == grid2[row][4]);
+                    let cols = (4..size).step_by(2);
+                    return cols
+                        .into_iter()
+                        .all(|col| (w1[col] == grid1[row][col]) && (w2[col] == grid2[row][col]));
                 })
                 .collect();
             return filtered_across_pairs;
@@ -245,30 +229,6 @@ fn sparse_find_possible_final_acrosses<'a>(
         .collect();
     // Get every combo of possible placements in the columns
     return ds.into_iter().multi_cartesian_product().collect();
-    // lookup those that fit the first two letters...
-    // let mask1 = find_row_mask(grid1, 4, vec![0, 2]);
-    // let mask2 = find_row_mask(grid2, 4, vec![0, 2]);
-    // let maybe_candidates = lookup.get(&(mask1, mask2));
-    // if maybe_candidates.is_none() {
-    //     return vec![];
-    // }
-    // //inlined this because rust madness
-    // let matches_last = |candidate: &MultiSurface| {
-    //     let (_clue, w1, w2) = candidate;
-    //     //sanity check
-    //     assert!(w1[0] == grid1[4][0]);
-    //     assert!(w1[2] == grid1[4][2]);
-    //     assert!(w2[0] == grid2[4][0]);
-    //     assert!(w2[2] == grid2[4][2]);
-    //     return (w1[4] == grid1[4][4]) && (w2[4] == grid2[4][4]);
-    // };
-    // return maybe_candidates
-    //     .unwrap_or(empty)
-    //     .into_iter()
-    //     .filter(|candidate| {
-    //         return matches_last(*candidate);
-    //     })
-    //     .collect();
 }
 
 /// The different stages for placing clues in a grid
@@ -338,7 +298,7 @@ impl Searcher for Alternating {
 
     fn calculate_number_of_initial_pairs(&self) -> usize {
         let number_of_pairs = self.pairs.len();
-        return number_of_pairs * (number_of_pairs - 1);
+        return number_of_pairs * (number_of_pairs - 1) / 2;
     }
 
     fn get_initial_pairs(

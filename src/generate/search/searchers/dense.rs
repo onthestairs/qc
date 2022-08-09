@@ -86,7 +86,7 @@ impl Searcher for Dense {
 
     fn calculate_number_of_initial_pairs(&self) -> usize {
         let number_of_pairs = self.pairs.len();
-        return number_of_pairs * (number_of_pairs - 1);
+        return number_of_pairs * (number_of_pairs - 1) / 2;
     }
 
     fn get_initial_pairs(

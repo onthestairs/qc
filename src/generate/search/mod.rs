@@ -83,7 +83,7 @@ pub fn find_grids_with_searcher<T, F>(
     let initial_pairs = searcher.get_initial_pairs();
     for pairs in initial_pairs {
         i += 1;
-        if i < start_index {
+        if (i < start_index) || (pairs[0].1 > pairs[1].2) {
             continue;
         }
         searcher.reset_and_place_initial_pairs(&mut grids, &mut surfaces, &pairs);
