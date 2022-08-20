@@ -1,22 +1,24 @@
+//! Find some quinian crosswords
+
 use std::collections::HashMap;
 
 use clap::Parser;
-use qc::generate::data::Word;
-use qc::generate::qc::QuinianCrossword;
-use qc::generate::search::find_grids_with_searcher;
-use qc::generate::search::searchers::alternating::Alternating;
-use qc::generate::search::searchers::dense::Dense;
-use qc::generate::search::searchers::Searcher;
-use qc::store::csv::get_clues;
-use qc::store::ensure_results_table_exists;
-use qc::store::get_connection;
-use qc::store::insert_result_into_table;
-use qc::store::word_frequencies::get_words_wiki_frequencies;
+
+use crate::generate::data::Word;
+use crate::generate::qc::QuinianCrossword;
+use crate::generate::search::find_grids_with_searcher;
+use crate::generate::search::searchers::alternating::Alternating;
+use crate::generate::search::searchers::dense::Dense;
+use crate::generate::search::searchers::Searcher;
+use crate::store::csv::get_clues;
+use crate::store::ensure_results_table_exists;
+use crate::store::get_connection;
+use crate::store::insert_result_into_table;
+use crate::store::word_frequencies::get_words_wiki_frequencies;
 
 /// Program to generate quinian crosswords
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct Args {
+pub struct Args {
     #[clap(arg_enum)]
     searcher: CrosswordType,
 
@@ -79,9 +81,8 @@ fn filter_clues(
         .collect();
 }
 
-fn main() {
-    let args = Args::parse();
-
+/// Run the find command
+pub fn run(args: Args) {
     let connection = get_connection();
     ensure_results_table_exists(&connection);
     let clues = get_clues().unwrap();

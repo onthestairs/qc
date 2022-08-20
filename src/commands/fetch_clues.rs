@@ -1,11 +1,17 @@
+//! Fetch clues from the internet
+
 use std::fs::File;
 
-use chrono::{Datelike, Duration, Utc};
-use qc::crosswords::sources::guardian;
-use qc::crosswords::sources::nyt;
-use qc::store::ensure_table_exists;
-use qc::store::get_connection;
-use qc::store::insert_into_table;
+use chrono::Datelike;
+use chrono::Duration;
+use chrono::Utc;
+use clap::Parser;
+
+use crate::crosswords::sources::guardian;
+use crate::crosswords::sources::nyt;
+use crate::store::ensure_table_exists;
+use crate::store::get_connection;
+use crate::store::insert_into_table;
 
 fn insert_crossword(
     connection: &sqlite::Connection,
@@ -72,10 +78,27 @@ fn import_xds(connection: &sqlite::Connection) {
     }
 }
 
-fn main() {
+/// Fetch clues
+#[derive(Parser)]
+pub struct Args {
+    /// Exclude guardian
+    #[clap(long)]
+    exclude_guardian: bool,
+
+    /// Exclude guardian
+    #[clap(long)]
+    exclude_nyt: bool,
+}
+
+/// Fetch clues from the internet
+pub fn run(args: Args) {
     let connection = get_connection();
     ensure_table_exists(&connection);
-    fetch_guardian_clues(&connection);
-    fetch_nyt_clues(&connection);
+    if !args.exclude_guardian {
+        fetch_guardian_clues(&connection);
+    }
+    if !args.exclude_nyt {
+        fetch_nyt_clues(&connection);
+    }
     import_xds(&connection);
 }

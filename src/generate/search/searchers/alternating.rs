@@ -14,7 +14,6 @@ use crate::generate::data::make_ms_pairs;
 use crate::generate::data::PairPrefixLookup;
 use crate::generate::data::Surface;
 use crate::generate::data::Word;
-use crate::generate::grid::find_col_prefix;
 use crate::generate::grid::get_word_in_col;
 use crate::generate::grid::get_word_in_row;
 use crate::generate::grid::make_empty_grid;
@@ -369,30 +368,8 @@ impl Searcher for Alternating {
         _grids: &Self::Grids,
         _surfaces: &mut Self::Surfaces,
     ) -> Vec<PairStatus> {
+        // all the grids are fully correct by construction
         return vec![];
-        // // check if the final across words are proper words
-        // let final_words_1 = sparse_get_words_in_row_after(&grids.0, 2);
-        // dbg!(&final_words_1);
-        // let final_words_2 = sparse_get_words_in_row_after(&grids.1, 2);
-        // let final_across_pairs = final_words_1.into_iter().zip(final_words_2.into_iter());
-        //
-        // let final_word_statuses: Vec<PairStatus> = final_across_pairs
-        //     .enumerate()
-        //     .map(|(row, (w1, w2))| {
-        //         if self.word_list.contains(w1) && self.word_list.contains(w2) {
-        //             match self.pairs_to_surface.get(&(w1.clone(), w2.clone())) {
-        //                 Some(surface) => {
-        //                     across_surfaces[2 + row] = Some(surface.clone());
-        //                     PairStatus::HasSurface(surface.clone())
-        //                 }
-        //                 None => PairStatus::Words,
-        //             }
-        //         } else {
-        //             PairStatus::NotWords
-        //         }
-        //     })
-        //     .collect();
-        // return final_word_statuses;
     }
 
     fn is_happy(&self, grids: &Self::Grids) -> bool {

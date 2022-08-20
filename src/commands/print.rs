@@ -1,3 +1,5 @@
+//! Allow the printing of commands
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
@@ -5,13 +7,14 @@ use std::io::BufRead;
 use std::io::BufReader;
 
 use clap::Parser;
-use qc::generate::data::Word;
-use qc::generate::grid::get_all_words;
-use qc::generate::qc::print_qc;
-use qc::generate::qc::QuinianCrossword;
-use qc::store::get_connection;
-use qc::store::get_results;
-use qc::store::word_frequencies::get_words_wiki_frequencies;
+
+use crate::generate::data::Word;
+use crate::generate::grid::get_all_words;
+use crate::generate::qc::print_qc;
+use crate::generate::qc::QuinianCrossword;
+use crate::store::get_connection;
+use crate::store::get_results;
+use crate::store::word_frequencies::get_words_wiki_frequencies;
 
 #[derive(clap::ArgEnum, Clone)]
 enum CrosswordType {
@@ -25,8 +28,7 @@ enum CrosswordType {
 
 /// Program to print quinian crosswords
 #[derive(Parser)]
-#[clap(author, version, about, long_about = None)]
-struct Args {
+pub struct Args {
     /// Crossword type
     #[clap(arg_enum)]
     crossword_type: CrosswordType,
@@ -119,9 +121,8 @@ fn show_crossword_type(crossword_type: CrosswordType) -> String {
     };
 }
 
-fn main() {
-    let args = Args::parse();
-
+/// Print some QCs
+pub fn run(args: Args) {
     let connection = get_connection();
     let solutions = get_results(
         &connection,
