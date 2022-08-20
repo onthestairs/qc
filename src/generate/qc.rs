@@ -1,9 +1,12 @@
 //! A quinian crossword
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 use term_table::row::Row;
-use term_table::table_cell::{Alignment, TableCell};
-use term_table::{Table, TableStyle};
+use term_table::table_cell::Alignment;
+use term_table::table_cell::TableCell;
+use term_table::Table;
+use term_table::TableStyle;
 
 use super::grid::Grid;
 
