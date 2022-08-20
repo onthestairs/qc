@@ -8,8 +8,10 @@ use qc::generate::search::searchers::alternating::Alternating;
 use qc::generate::search::searchers::dense::Dense;
 use qc::generate::search::searchers::Searcher;
 use qc::store::csv::get_clues;
+use qc::store::ensure_results_table_exists;
+use qc::store::get_connection;
+use qc::store::insert_result_into_table;
 use qc::store::word_frequencies::get_words_wiki_frequencies;
-use qc::store::{ensure_results_table_exists, get_connection, insert_result_into_table};
 
 /// Program to generate quinian crosswords
 #[derive(Parser, Debug)]
@@ -48,6 +50,7 @@ fn should_include(
     word_frequencies: &HashMap<Word, u32>,
     min_word_frequency: Option<u32>,
 ) -> bool {
+    // exclude any bad surfaces (just uses various heuristics for now)
     if surface.len() == 0 || surface.starts_with("See") || surface == "<<NO CLUE>>" {
         return false;
     }
