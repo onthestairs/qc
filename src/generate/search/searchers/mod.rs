@@ -5,10 +5,12 @@ pub mod dense;
 
 use itertools::Combinations;
 
-use crate::generate::{data::Word, qc::QuinianCrossword};
+use crate::generate::data::Surface;
+use crate::generate::data::Word;
+use crate::generate::qc::QuinianCrossword;
 
 /// A surface and its two solutions
-pub type Pair = (String, Word, Word);
+pub type Pair = (Surface, Word, Word);
 
 /// The status of a pair
 pub enum PairStatus {

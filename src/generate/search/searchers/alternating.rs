@@ -1,12 +1,18 @@
 //! A searcher for a dense grid
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
 
-use itertools::{Combinations, Itertools};
+use itertools::Combinations;
+use itertools::Itertools;
 
+use super::Pair;
+use super::PairStatus;
+use super::Searcher;
 use crate::generate::data::get_multi_surfaces;
 use crate::generate::data::make_ms_pairs;
 use crate::generate::data::PairPrefixLookup;
+use crate::generate::data::Surface;
 use crate::generate::data::Word;
 use crate::generate::grid::find_col_prefix;
 use crate::generate::grid::get_word_in_col;
@@ -17,20 +23,19 @@ use crate::generate::grid::place_word_in_row_mut;
 use crate::generate::grid::Grid;
 use crate::generate::qc::QuinianCrossword;
 
-use super::Pair;
-use super::PairStatus;
-use super::Searcher;
-
-type Clue = String;
-type MultiSurface = (Clue, Word, Word);
+type MultiSurface = (Surface, Word, Word);
 type MaskLookup = HashMap<(Word, Word), Vec<MultiSurface>>;
 
 /// A searcher for a dense crossword
 #[derive(Clone)]
 pub struct Alternating {
+    /// the size of the grid
     size: usize,
+    /// All the clue pairs
     pairs: Vec<Pair>,
+    /// A lookup for the mask
     mask_lookup: MaskLookup,
+    /// Hack - we need this lying around to make the lifetimes agree
     empty_vec: Vec<Pair>,
 }
 
@@ -111,7 +116,7 @@ fn sparse_place_down_clues(
 fn sparse_place_final_across_clues(
     g1: &mut Grid,
     g2: &mut Grid,
-    surfaces: &mut Vec<Option<String>>,
+    surfaces: &mut Vec<Option<Surface>>,
     across_combos: &Vec<&MultiSurface>,
 ) {
     let mut row = 4;
@@ -253,8 +258,6 @@ impl Searcher for Alternating {
         let multi_surfaces = get_multi_surfaces(&filtered_clues);
         println!("Found {} multi-surfaces", multi_surfaces.len());
         let pairs = make_ms_pairs(&multi_surfaces);
-        // let pairs_to_surface = make_pairs_to_surface(&pairs);
-        // let word_list = make_word_list_all(size, &filtered_clues);
         let ms_pairs_cloned = pairs.clone();
         let mask_lookup = make_mask_lookup(&ms_pairs_cloned);
         let empty_vec = vec![];
@@ -262,8 +265,6 @@ impl Searcher for Alternating {
             size,
             pairs,
             mask_lookup,
-            // pairs_to_surface,
-            // word_list,
             empty_vec,
         };
     }
@@ -416,55 +417,3 @@ impl Searcher for Alternating {
         };
     }
 }
-
-/// Find the possible downs in a dense grid
-pub fn find_possible_downs<'a>(
-    lookup: &'a PairPrefixLookup,
-    // weird hack so that i can use the default in the
-    // map lookup
-    e: &'a Vec<(String, Word, Word)>,
-    grid1: &Grid,
-    grid2: &Grid,
-) -> Vec<Vec<&'a (String, Word, Word)>> {
-    let size = grid1.len();
-    // find the possible pairs in each column
-    let ds: Vec<&Vec<(String, Word, Word)>> = (0..size)
-        .map(|col| {
-            let prefix1 = find_col_prefix(grid1, col, 2);
-            let prefix2 = find_col_prefix(grid2, col, 2);
-            let maybe_down_pairs = lookup.get(&(prefix1, prefix2));
-            let down_pairs = maybe_down_pairs.unwrap_or(e);
-            return down_pairs;
-        })
-        .collect();
-    // Get every combo of possible placements in the columns
-    return ds.into_iter().multi_cartesian_product().collect();
-}
-
-/// Place down clues in a dense grid
-pub fn place_down_clues(
-    g1: &mut Grid,
-    g2: &mut Grid,
-    surfaces: &mut Vec<Option<String>>,
-    down_combos: &Vec<&(String, Word, Word)>,
-) {
-    let mut col = 0;
-    for (surface, w1, w2) in down_combos {
-        place_word_in_col_mut(g1, col, w1);
-        place_word_in_col_mut(g2, col, w2);
-        surfaces[col] = Some(surface.clone());
-        col += 1;
-    }
-}
-
-// /// Check for duplicates in two dense grids
-// pub fn no_duplicates_in_grid(size: usize, g1: &Grid, g2: &Grid) -> bool {
-//     let words1 = get_all_words(g1);
-//     let words2 = get_all_words(g2);
-//     let mut all_words: HashSet<Word> = words1.into_iter().collect();
-//     for word in words2 {
-//         all_words.insert(word);
-//     }
-//     let expected_len = (2 * size) * 2;
-//     return expected_len == all_words.len();
-// }

@@ -1,31 +1,45 @@
 //! A searcher for a dense grid
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
 
-use itertools::{Combinations, Itertools};
+use itertools::Combinations;
+use itertools::Itertools;
 
-use crate::generate::{
-    data::{
-        get_multi_surfaces, make_ms_pairs, make_pair_prefix_lookup, make_pairs_to_surface,
-        make_word_list_all, PairPrefixLookup, Word,
-    },
-    grid::{
-        find_col_prefix, get_all_words, get_words_in_row_after, init_grid, make_empty_grid,
-        place_word_in_col_mut, reset_grid, Grid,
-    },
-    qc::QuinianCrossword,
-};
-
-use super::{Pair, PairStatus, Searcher};
+use super::Pair;
+use super::PairStatus;
+use super::Searcher;
+use crate::generate::data::get_multi_surfaces;
+use crate::generate::data::make_ms_pairs;
+use crate::generate::data::make_pair_prefix_lookup;
+use crate::generate::data::make_pairs_to_surface;
+use crate::generate::data::make_word_list_all;
+use crate::generate::data::PairPrefixLookup;
+use crate::generate::data::Word;
+use crate::generate::grid::find_col_prefix;
+use crate::generate::grid::get_all_words;
+use crate::generate::grid::get_words_in_row_after;
+use crate::generate::grid::init_grid;
+use crate::generate::grid::make_empty_grid;
+use crate::generate::grid::place_word_in_col_mut;
+use crate::generate::grid::reset_grid;
+use crate::generate::grid::Grid;
+use crate::generate::qc::QuinianCrossword;
 
 /// A searcher for a dense crossword
 #[derive(Clone)]
 pub struct Dense {
+    /// The size of the grid
     size: usize,
+    /// The clue-pairs
     pairs: Vec<Pair>,
+    /// The prefix lookups
     prefix_lookup: PairPrefixLookup,
+    /// A map from two words to a surface
     pairs_to_surface: HashMap<(Word, Word), String>,
+    /// All the available words
     word_list: HashSet<Word>,
+    /// An empty vec (used as a hack)
     empty_vec: Vec<Pair>,
 }
 
