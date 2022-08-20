@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use itertools::Combinations;
 use itertools::Itertools;
+use itertools::Permutations;
 
 use super::Pair;
 use super::PairStatus;
@@ -65,8 +65,7 @@ impl Searcher for Dense {
         let pairs = make_ms_pairs(&multi_surfaces);
         let pairs_to_surface = make_pairs_to_surface(&pairs);
         let word_list = make_word_list_all(size, &filtered_clues);
-        let ms_pairs_cloned = pairs.clone();
-        let prefix_lookup = make_pair_prefix_lookup(&ms_pairs_cloned);
+        let prefix_lookup = make_pair_prefix_lookup(&pairs);
         let empty_vec = vec![];
         return Dense {
             size,
@@ -101,8 +100,8 @@ impl Searcher for Dense {
 
     fn get_initial_pairs(
         &self,
-    ) -> Combinations<std::slice::Iter<(std::string::String, Vec<char>, Vec<char>)>> {
-        return self.pairs.iter().combinations(2);
+    ) -> Permutations<std::slice::Iter<(std::string::String, Vec<char>, Vec<char>)>> {
+        return self.pairs.iter().permutations(2);
     }
 
     fn reset_and_place_initial_pairs(

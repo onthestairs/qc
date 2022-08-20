@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use itertools::Combinations;
 use itertools::Itertools;
+use itertools::Permutations;
 
 use super::Pair;
 use super::PairStatus;
@@ -296,8 +296,8 @@ impl Searcher for Alternating {
 
     fn get_initial_pairs(
         &self,
-    ) -> Combinations<std::slice::Iter<(std::string::String, Vec<char>, Vec<char>)>> {
-        return self.pairs.iter().combinations(2);
+    ) -> Permutations<std::slice::Iter<(std::string::String, Vec<char>, Vec<char>)>> {
+        return self.pairs.iter().permutations(2);
     }
 
     fn reset_and_place_initial_pairs(

@@ -11,7 +11,7 @@ use term_table::TableStyle;
 use super::grid::Grid;
 
 /// A quinian crossword
-#[derive(PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Clone, Debug)]
 pub struct QuinianCrossword {
     /// the left hand grid
     pub grid1: Grid,

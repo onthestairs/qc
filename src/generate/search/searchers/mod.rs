@@ -3,7 +3,7 @@
 pub mod alternating;
 pub mod dense;
 
-use itertools::Combinations;
+use itertools::Permutations;
 
 use crate::generate::data::Surface;
 use crate::generate::data::Word;
@@ -45,7 +45,7 @@ pub trait Searcher {
     /// Get the first pairs to place
     fn get_initial_pairs(
         &self,
-    ) -> Combinations<std::slice::Iter<(std::string::String, Vec<char>, Vec<char>)>>;
+    ) -> Permutations<std::slice::Iter<(std::string::String, Vec<char>, Vec<char>)>>;
     /// Reset the grid and place initial pairs
     fn reset_and_place_initial_pairs(
         &self,
