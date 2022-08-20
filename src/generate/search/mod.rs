@@ -84,7 +84,17 @@ pub fn find_grids_with_searcher<T, F>(
     let initial_pairs = searcher.get_initial_pairs();
     for pairs in initial_pairs {
         i += 1;
-        if (i < start_index) || (pairs[0].1 > pairs[1].2) {
+        // check if we should be skipping this index
+        if i < start_index {
+            continue;
+        }
+        // check if the first word of the first pair is first
+        // alphabetically -- otherwise we will be end up duplicating
+        // the work when we receive the pair in the opposite direction
+        // (this only works if we are placing 2 initial pairs.
+        // it should probably actually be up to the searcher to filter
+        // these)
+        if pairs[0].1 > pairs[0].2 {
             continue;
         }
         searcher.reset_and_place_initial_pairs(&mut grids, &mut surfaces, &pairs);
