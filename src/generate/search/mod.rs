@@ -3,12 +3,14 @@
 pub mod searchers;
 
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
+use std::hash::Hasher;
 use std::time::Instant;
 
-use super::qc::QuinianCrossword;
 use searchers::PairStatus;
 use searchers::Searcher;
+
+use super::qc::QuinianCrossword;
 
 /// Make a hash of a crossword
 pub fn hash_crossword(crossword: &QuinianCrossword) -> u64 {
@@ -29,8 +31,7 @@ fn find_and_place_pairs<S, F>(
     F: Fn(&QuinianCrossword, String, usize) -> (),
 {
     for other_pairs in searcher.get_next_pairs(&stage, &grids) {
-        searcher.place_next_pairs(&stage, grids, surfaces, &other_pairs);
-        let maybe_next_stage = searcher.get_next_stage(&stage);
+        let maybe_next_stage = searcher.place_next_pairs(&stage, grids, surfaces, &other_pairs);
         if let Some(next_stage) = maybe_next_stage {
             find_and_place_pairs(
                 searcher,

@@ -33,13 +33,11 @@ pub trait Searcher {
     /// The stages
     type Stage;
     /// Make a new Searcher
-    fn new(params: Self::Params, clues: Vec<(String, Word)>) -> Self;
+    fn new(params: Self::Params, clues: Vec<(Surface, Word)>) -> Self;
     /// Return the crossword type
     fn crossword_type(&self) -> String;
     /// The first stage
     fn get_initial_stage(&self) -> Self::Stage;
-    /// Get the next stage
-    fn get_next_stage(&self, stage: &Self::Stage) -> Option<Self::Stage>;
     /// Initialise some grids
     fn init_grids(&self) -> (Self::Grids, Self::Surfaces);
     /// Calculate the number of initial pairs
@@ -57,21 +55,21 @@ pub trait Searcher {
     );
     /// Get other pairs
     fn get_next_pairs(&self, stage: &Self::Stage, grids: &Self::Grids) -> Vec<Vec<&Pair>>;
-    /// Place the other pairs
+    /// Place the next pairs and return the next stage
     fn place_next_pairs(
         &self,
         stage: &Self::Stage,
         grids: &mut Self::Grids,
         surfaces: &mut Self::Surfaces,
         pairs: &Vec<&Pair>,
-    );
+    ) -> Option<Self::Stage>;
     /// Get the final status of the words
     fn get_final_statuses(
         &self,
         grids: &Self::Grids,
         surfaces: &mut Self::Surfaces,
     ) -> Vec<PairStatus>;
-    /// Is the final grids good
+    /// Is the final grid good
     fn is_happy(&self, grids: &Self::Grids) -> bool;
     /// Get the final crossword
     fn get_crossword(&self, grids: &Self::Grids, surfaces: &Self::Surfaces) -> QuinianCrossword;

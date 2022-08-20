@@ -94,10 +94,6 @@ impl Searcher for Dense {
         return DenseStage::Downs;
     }
 
-    fn get_next_stage(&self, _: &Self::Stage) -> Option<Self::Stage> {
-        return None;
-    }
-
     fn calculate_number_of_initial_pairs(&self) -> usize {
         let number_of_pairs = self.pairs.len();
         return number_of_pairs * (number_of_pairs - 1) / 2;
@@ -135,8 +131,10 @@ impl Searcher for Dense {
         grids: &mut Self::Grids,
         surfaces: &mut Self::Surfaces,
         pairs: &Vec<&Pair>,
-    ) {
+    ) -> Option<Self::Stage> {
         place_down_clues(&mut grids.0, &mut grids.1, &mut surfaces.1, &pairs);
+        // No more stages after we've placed the downs
+        return None;
     }
 
     fn get_final_statuses(

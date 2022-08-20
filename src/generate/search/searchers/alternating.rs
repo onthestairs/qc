@@ -277,13 +277,6 @@ impl Searcher for Alternating {
         return AlternatingStage::Downs;
     }
 
-    fn get_next_stage(&self, stage: &Self::Stage) -> Option<Self::Stage> {
-        return match stage {
-            AlternatingStage::Downs => Some(AlternatingStage::FinalAcrosses),
-            AlternatingStage::FinalAcrosses => None,
-        };
-    }
-
     fn init_grids(&self) -> (Self::Grids, Self::Surfaces) {
         let grid1 = make_sparse_grid(self.size);
         let grid2 = make_sparse_grid(self.size);
@@ -353,10 +346,11 @@ impl Searcher for Alternating {
         grids: &mut Self::Grids,
         surfaces: &mut Self::Surfaces,
         pairs: &Vec<&Pair>,
-    ) {
+    ) -> Option<Self::Stage> {
         match stage {
             AlternatingStage::Downs => {
                 sparse_place_down_clues(&mut grids.0, &mut grids.1, &mut surfaces.1, &pairs);
+                return Some(AlternatingStage::FinalAcrosses);
             }
             AlternatingStage::FinalAcrosses => {
                 sparse_place_final_across_clues(
@@ -365,6 +359,7 @@ impl Searcher for Alternating {
                     &mut surfaces.0,
                     &pairs,
                 );
+                return None;
             }
         }
     }
