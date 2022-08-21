@@ -24,19 +24,22 @@
         craneLib = crane.lib.${system};
         src = ./.;
 
+        commonBuildInputs = [
+          pkgs.libiconv
+          pkgs.postgresql
+          pkgs.openssl.dev
+        ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+          pkgs.darwin.apple_sdk.frameworks.Security
+          pkgs.darwin.apple_sdk.frameworks.CoreServices
+          pkgs.darwin.apple_sdk.frameworks.CoreFoundation
+        ];
+
+
         # Build *just* the cargo dependencies, so we can reuse
         # all of that work (e.g. via cachix) when running in CI
         cargoArtifacts = craneLib.buildDepsOnly {
           inherit src;
-          buildInputs = [
-            pkgs.libiconv
-            pkgs.postgresql
-            pkgs.openssl.dev
-            pkgs.openssl
-            pkgs.darwin.apple_sdk.frameworks.Security
-            pkgs.darwin.apple_sdk.frameworks.CoreServices
-            pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-          ];
+          buildInputs = commonBuildInputs;
           OPENSSL_DIR = "${pkgs.openssl.dev}";
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
         };
@@ -45,17 +48,11 @@
         # artifacts from above.
         qc = craneLib.buildPackage {
           inherit cargoArtifacts src;
-          buildInputs = [
-            pkgs.libiconv
-            pkgs.postgresql
-            pkgs.openssl.dev
-            pkgs.darwin.apple_sdk.frameworks.Security
-            pkgs.darwin.apple_sdk.frameworks.CoreServices
-            pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-          ];
+          buildInputs = commonBuildInputs;
+
           OPENSSL_DIR = "${pkgs.openssl.dev}";
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
-          doCheck = false;
+          # doCheck = false;
         };
       in
       {
@@ -97,20 +94,13 @@
           tag = qc.version;
           created = "now";
           contents = qc;
-          config.Cmd = [ "${qc}/bin/find_qcs" ];
+          config.Cmd = [ "${qc}/bin/qc" ];
         };
 
         devShells.default = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.checks;
 
-          buildInputs = [
-            pkgs.libiconv
-            pkgs.sqlite
-            pkgs.openssl.dev
-            pkgs.darwin.apple_sdk.frameworks.Security
-            pkgs.darwin.apple_sdk.frameworks.CoreServices
-            pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-          ];
+          buildInputs = commonBuildInputs;
           nativeBuildInputs = with pkgs; [
             cargo
             rustc
