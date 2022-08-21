@@ -86,32 +86,33 @@ fn filter_clues(
 pub fn run(args: Args) {
     let connection = get_connection();
     ensure_results_table_exists(&connection);
-    let mut save_crossword =
-        |crossword: &QuinianCrossword, crossword_type: String, score: usize| {
-            insert_result_into_table(&connection, crossword, crossword_type, score);
-        };
+    let save_crossword = |crossword: &QuinianCrossword, crossword_type: String, score: usize| {
+        insert_result_into_table(&connection, crossword, crossword_type, score);
+    };
     let clues = get_clues().unwrap();
+    let word_frequencies = get_words_wiki_frequencies();
     find_qcs(
         clues,
+        word_frequencies,
         args.searcher,
         args.min_word_frequency,
         args.start_index,
         args.allowed_missing_surfaces,
-        &mut save_crossword,
+        &save_crossword,
     );
 }
 
 fn find_qcs<F>(
     clues: Vec<(Surface, Word)>,
+    word_frequencies: HashMap<Word, u32>,
     searcher: CrosswordType,
     min_word_frequency: Option<u32>,
     start_index: usize,
     allowed_missing_surfaces: usize,
-    on_found: &mut F,
+    on_found: &F,
 ) where
-    F: FnMut(&QuinianCrossword, String, usize) -> (),
+    F: Fn(&QuinianCrossword, String, usize) -> (),
 {
-    let word_frequencies = get_words_wiki_frequencies();
     let filtered_clues = filter_clues(clues, word_frequencies, min_word_frequency);
     match searcher {
         CrosswordType::Dense3 => {
@@ -144,6 +145,8 @@ fn find_qcs<F>(
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
+    use std::ops::Deref;
+    use std::sync::Mutex;
 
     use super::*;
 
@@ -172,13 +175,22 @@ mod tests {
             ("D3".to_string(), vec!['C', 'F', 'I']),
             ("D3".to_string(), vec!['L', 'O', 'R']),
         ];
-        let mut quines: HashSet<QuinianCrossword> = HashSet::new();
 
-        let mut store_quine =
-            |crossword: &QuinianCrossword, _crossword_type: String, _score: usize| {
-                quines.insert(crossword.clone());
-            };
-        find_qcs(clues, CrosswordType::Dense3, None, 0, 0, &mut store_quine);
+        let quines_mutex = Mutex::new(HashSet::new());
+
+        let store_quine = |crossword: &QuinianCrossword, _crossword_type: String, _score: usize| {
+            let mut quines = quines_mutex.lock().unwrap();
+            quines.insert(crossword.clone());
+        };
+        find_qcs(
+            clues,
+            HashMap::new(),
+            CrosswordType::Dense3,
+            None,
+            0,
+            0,
+            &store_quine,
+        );
 
         let expected_quines_list = vec![
             QuinianCrossword {
@@ -229,7 +241,8 @@ mod tests {
         let mut expected_quines = HashSet::new();
         expected_quines.insert(expected_quines_list[0].clone());
         expected_quines.insert(expected_quines_list[1].clone());
+        let quines = quines_mutex.lock().unwrap();
         assert_eq!(quines.len(), expected_quines.len());
-        assert_eq!(expected_quines, quines);
+        assert_eq!(expected_quines, *quines.deref());
     }
 }

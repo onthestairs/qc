@@ -25,10 +25,10 @@ fn find_and_place_pairs<S, F>(
     grids: &mut S::Grids,
     surfaces: &mut S::Surfaces,
     allowed_missing_surfaces: usize,
-    on_found: &mut F,
+    on_found: &F,
 ) where
     S: Searcher,
-    F: FnMut(&QuinianCrossword, String, usize) -> (),
+    F: Fn(&QuinianCrossword, String, usize) -> (),
 {
     for other_pairs in searcher.get_next_pairs(&stage, &grids) {
         let maybe_next_stage = searcher.place_next_pairs(&stage, grids, surfaces, &other_pairs);
@@ -71,10 +71,10 @@ pub fn find_grids_with_searcher<T, F>(
     start_index: usize,
     allowed_missing_surfaces: usize,
     searcher: &T,
-    on_found: &mut F,
+    on_found: &F,
 ) where
     T: Searcher,
-    F: FnMut(&QuinianCrossword, String, usize) -> (),
+    F: Fn(&QuinianCrossword, String, usize) -> (),
 {
     let mut i = 0;
     let mut batch_start_time = Instant::now();
