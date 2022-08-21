@@ -68,7 +68,7 @@ fn print_surfaces(surfaces: &Vec<Option<String>>) -> String {
         let n = i + 1;
         let surface_str = match maybe_surface {
             Some(surface) => surface.clone(),
-            None => "missing".to_string(),
+            None => "[[missing]]".to_string(),
         };
         let full_surface = format!("{n}. {surface_str}").to_string();
         surfaces_str += &full_surface;
