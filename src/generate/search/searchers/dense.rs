@@ -166,9 +166,13 @@ impl Searcher for Dense {
                             across_surfaces[2 + row] = Some(surface.clone());
                             PairStatus::HasSurface(surface.clone())
                         }
-                        None => PairStatus::Words,
+                        None => {
+                            across_surfaces[2 + row] = None;
+                            PairStatus::Words
+                        }
                     }
                 } else {
+                    across_surfaces[2 + row] = None;
                     PairStatus::NotWords
                 }
             })
