@@ -95,7 +95,7 @@ impl Searcher for Dense {
 
     fn calculate_number_of_initial_pairs(&self) -> usize {
         let number_of_pairs = self.pairs.len();
-        return number_of_pairs * (number_of_pairs - 1) / 2;
+        return number_of_pairs * (number_of_pairs - 1);
     }
 
     fn get_initial_pairs(
@@ -107,11 +107,22 @@ impl Searcher for Dense {
     fn reset_and_place_initial_pairs(
         &self,
         grids: &mut Self::Grids,
-        (across_surfaces, _down_surfaces): &mut Self::Surfaces,
+        (across_surfaces, down_surfaces): &mut Self::Surfaces,
         pairs: &Vec<&Pair>,
     ) {
+        // reset the grids
         reset_grid(&mut grids.0);
         reset_grid(&mut grids.1);
+
+        // reset the surfaces
+        for i in 0..self.size {
+            across_surfaces[i] = None;
+        }
+        for i in 0..self.size {
+            down_surfaces[i] = None;
+        }
+
+        // place the pairs
         let (across_surface_1, w11, w12) = pairs[0];
         across_surfaces[0] = Some(across_surface_1.clone());
         let (across_surface_2, w21, w22) = pairs[1];

@@ -30,6 +30,8 @@ type MaskLookup = HashMap<(Word, Word), Vec<MultiSurface>>;
 pub struct Alternating {
     /// the size of the grid
     size: usize,
+    /// Number of clues (precomputed)
+    number_of_clues: usize,
     /// All the clue pairs
     pairs: Vec<Pair>,
     /// A lookup for the mask
@@ -260,8 +262,16 @@ impl Searcher for Alternating {
         let ms_pairs_cloned = pairs.clone();
         let mask_lookup = make_mask_lookup(&ms_pairs_cloned);
         let empty_vec = vec![];
+
+        // figure out how many clues we have
+        let number_of_clues = if size % 2 == 0 {
+            size / 2
+        } else {
+            (size / 2) + 1
+        };
         return Alternating {
             size,
+            number_of_clues,
             pairs,
             mask_lookup,
             empty_vec,
@@ -279,13 +289,8 @@ impl Searcher for Alternating {
     fn init_grids(&self) -> (Self::Grids, Self::Surfaces) {
         let grid1 = make_sparse_grid(self.size);
         let grid2 = make_sparse_grid(self.size);
-        let number_of_across_clues = if self.size % 2 == 0 {
-            self.size / 2
-        } else {
-            (self.size / 2) + 1
-        };
-        let across_surfaces = vec![None; number_of_across_clues];
-        let down_surfaces = vec![None; number_of_across_clues];
+        let across_surfaces = vec![None; self.number_of_clues];
+        let down_surfaces = vec![None; self.number_of_clues];
         return ((grid1, grid2), (across_surfaces, down_surfaces));
     }
 
@@ -303,11 +308,20 @@ impl Searcher for Alternating {
     fn reset_and_place_initial_pairs(
         &self,
         grids: &mut Self::Grids,
-        (across_surfaces, _down_surfaces): &mut Self::Surfaces,
+        (across_surfaces, down_surfaces): &mut Self::Surfaces,
         pairs: &Vec<&Pair>,
     ) {
         reset_sparse_grid(&mut grids.0);
         reset_sparse_grid(&mut grids.1);
+
+        // reset the surfaces
+        for i in 0..self.number_of_clues {
+            across_surfaces[i] = None;
+        }
+        for i in 0..self.number_of_clues {
+            down_surfaces[i] = None;
+        }
+
         let (across_surface_1, w11, w12) = pairs[0];
         across_surfaces[0] = Some(across_surface_1.clone());
         let (across_surface_2, w21, w22) = pairs[1];
