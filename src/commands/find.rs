@@ -73,6 +73,11 @@ fn should_include(
             return false;
         }
     }
+    if let Some(min_score) = min_broda_score {
+        if *broda_scores.get(solution).unwrap_or(&0) < min_score {
+            return false;
+        }
+    }
     return true;
 }
 

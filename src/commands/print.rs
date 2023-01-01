@@ -37,6 +37,10 @@ pub struct Args {
     #[clap(short, long, default_value_t = 0)]
     allowed_missing_surfaces: usize,
 
+    /// Max
+    #[clap(short, long, default_value_t = 1_000_000)]
+    max: usize,
+
     /// Only allow common words
     #[clap(short, long)]
     used_on_wiki_n_times: Option<u32>,
@@ -128,6 +132,7 @@ pub fn run(args: Args) {
         &connection,
         show_crossword_type(args.crossword_type),
         args.allowed_missing_surfaces,
+        args.max,
     )
     .unwrap();
     let words_wiki_frequencies = get_words_wiki_frequencies();
@@ -136,13 +141,14 @@ pub fn run(args: Args) {
         used_on_wiki_n_times: args.used_on_wiki_n_times,
         exclude_banned_words: args.exclude_banned_words,
     };
-    for (solution, _score) in solutions {
+    for (solution, minimum_broda_score) in solutions {
         if is_good_solution(
             &filter_options,
             &words_wiki_frequencies,
             &banned_words,
             &solution,
         ) {
+            println!("{}", &minimum_broda_score);
             print_qc(&solution);
         }
     }

@@ -105,14 +105,16 @@ pub fn get_results(
     connection: &sqlite::Connection,
     crossword_type: String,
     missing_surfaces_at_most: usize,
+    max_results: usize,
 ) -> Option<Vec<(QuinianCrossword, f64)>> {
     let mut crosswords = vec![];
 
     let mut statement = connection
-        .prepare("SELECT crossword, average_broda_score FROM results WHERE crossword_type = ? AND missing_surfaces <= ?")
+        .prepare("SELECT crossword, min_broda_score FROM results WHERE crossword_type = ? AND missing_surfaces <= ? ORDER BY min_broda_score DESC LIMIT ?")
         .unwrap();
     let _ = statement.bind(1, &Value::String(crossword_type));
     let _ = statement.bind(2, &Value::Integer(missing_surfaces_at_most as i64));
+    let _ = statement.bind(3, &Value::Integer(max_results as i64));
 
     while let State::Row = statement.next().unwrap() {
         let serialised_crossword = statement.read::<String>(0).ok()?;
