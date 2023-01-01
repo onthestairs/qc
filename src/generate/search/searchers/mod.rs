@@ -73,4 +73,6 @@ pub trait Searcher {
     fn is_happy(&self, grids: &Self::Grids) -> bool;
     /// Get the final crossword
     fn get_crossword(&self, grids: &Self::Grids, surfaces: &Self::Surfaces) -> QuinianCrossword;
+    /// Get all the words in the grids
+    fn get_all_words(&self, grids: &Self::Grids) -> Vec<Word>;
 }

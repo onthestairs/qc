@@ -10,6 +10,7 @@ use std::time::Instant;
 use searchers::PairStatus;
 use searchers::Searcher;
 
+use super::data::Word;
 use super::qc::QuinianCrossword;
 
 /// Make a hash of a crossword
@@ -28,7 +29,7 @@ fn find_and_place_pairs<S, F>(
     on_found: &F,
 ) where
     S: Searcher,
-    F: Fn(&QuinianCrossword, String, usize) -> (),
+    F: Fn(&QuinianCrossword, String, Vec<Word>, usize) -> (),
 {
     for other_pairs in searcher.get_next_pairs(&stage, &grids) {
         let maybe_next_stage = searcher.place_next_pairs(&stage, grids, surfaces, &other_pairs);
@@ -45,23 +46,28 @@ fn find_and_place_pairs<S, F>(
             let final_word_statuses = searcher.get_final_statuses(&grids, surfaces);
 
             let mut illegal_count = 0;
-            let mut no_surface_count = 0;
+            let mut missing_surface_count = 0;
             for final_word_status in &final_word_statuses {
                 match final_word_status {
                     PairStatus::HasSurface(_) => {}
-                    PairStatus::Words => no_surface_count += 1,
+                    PairStatus::Words => missing_surface_count += 1,
                     PairStatus::NotWords => illegal_count += 1,
                 }
             }
-            let score = no_surface_count;
 
             if illegal_count == 0
-                && no_surface_count <= allowed_missing_surfaces
+                && missing_surface_count <= allowed_missing_surfaces
                 && searcher.is_happy(&grids)
             {
                 let quinian_crossword = searcher.get_crossword(&grids, &surfaces);
                 let crossword_type = searcher.crossword_type();
-                on_found(&quinian_crossword, crossword_type.clone(), score);
+                let words = searcher.get_all_words(grids);
+                on_found(
+                    &quinian_crossword,
+                    crossword_type.clone(),
+                    words,
+                    missing_surface_count,
+                );
             }
         }
     }
@@ -74,7 +80,7 @@ pub fn find_grids_with_searcher<T, F>(
     on_found: &F,
 ) where
     T: Searcher,
-    F: Fn(&QuinianCrossword, String, usize) -> (),
+    F: Fn(&QuinianCrossword, String, Vec<Word>, usize) -> (),
 {
     let mut i = 0;
     let mut batch_start_time = Instant::now();

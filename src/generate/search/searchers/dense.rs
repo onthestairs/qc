@@ -196,6 +196,13 @@ impl Searcher for Dense {
             down_surfaces: down_surfaces.clone(),
         };
     }
+
+    fn get_all_words(&self, grids: &Self::Grids) -> Vec<Word> {
+        let mut words = get_all_words(&grids.0);
+        let words2 = get_all_words(&grids.1);
+        words.extend(words2);
+        return words;
+    }
 }
 
 /// Find the possible downs in a dense grid

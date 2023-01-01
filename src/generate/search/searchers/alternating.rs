@@ -296,7 +296,7 @@ impl Searcher for Alternating {
 
     fn calculate_number_of_initial_pairs(&self) -> usize {
         let number_of_pairs = self.pairs.len();
-        return number_of_pairs * (number_of_pairs - 1) / 2;
+        return number_of_pairs * (number_of_pairs - 1);
     }
 
     fn get_initial_pairs(
@@ -401,5 +401,12 @@ impl Searcher for Alternating {
             across_surfaces: across_surfaces.clone(),
             down_surfaces: down_surfaces.clone(),
         };
+    }
+
+    fn get_all_words(&self, grids: &Self::Grids) -> Vec<Word> {
+        let mut words = sparse_get_all_words(self.size, &grids.0);
+        let words2 = sparse_get_all_words(self.size, &grids.1);
+        words.extend(words2);
+        return words;
     }
 }

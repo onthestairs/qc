@@ -3,3 +3,7 @@ dtrace -x ustackframes=100 -n "profile-97 /pid == 1234/ { @[ustack()] = count();
 cat out.user_stacks | inferno-collapse-dtrace > stacks.folded
 
 cat stacks.folded | inferno-flamegraph > flamegraph.svg
+
+--
+
+https://peterbroda.me/crosswords/wordlist/
